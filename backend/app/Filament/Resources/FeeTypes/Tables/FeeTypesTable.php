@@ -15,20 +15,31 @@ class FeeTypesTable
     {
         return $table
             ->columns([
-                TextColumn::make('id')
-                    ->label('ID')
-                    ->searchable(),
                 TextColumn::make('name')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable()
+                    ->label('Fee Name'),
+
                 TextColumn::make('slug')
-                    ->searchable(),
+                    ->badge()
+                    ->color('gray'),
+
                 TextColumn::make('amount')
-                    ->numeric()
-                    ->sortable(),
+                    ->money('IDR', locale: 'id')
+                    ->sortable()
+                    ->label('Monthly Amount'),
+
                 TextColumn::make('billing_cycle')
-                    ->searchable(),
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'monthly' => 'primary',
+                        'annual_option' => 'warning',
+                        default => 'gray',
+                    }),
+
                 IconColumn::make('is_active')
-                    ->boolean(),
+                    ->boolean()
+                    ->label('Active'),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

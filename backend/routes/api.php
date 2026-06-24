@@ -1,7 +1,11 @@
 <?php
 
+use App\Http\Controllers\Api\V1\ExpenseController;
+use App\Http\Controllers\Api\V1\FeeTypeController;
 use App\Http\Controllers\Api\V1\HouseController;
+use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\ReportController;
+use App\Http\Controllers\Api\V1\ResidentContoller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -32,7 +36,7 @@ Route::prefix('v1')->group(function () {
     // GET    /api/v1/residents/{id}           → show resident
     // PUT    /api/v1/residents/{id}           → update resident
     // DELETE /api/v1/residents/{id}           → soft delete resident
-    // Route::apiResource('residents', ResidentController::class);
+    Route::apiResource('residents', ResidentContoller::class);
 
     // ── Payments ─────────────────────────────────────────────────────
     // GET    /api/v1/payments                 → list payments (?month=2025-01&house_id=x)
@@ -40,7 +44,7 @@ Route::prefix('v1')->group(function () {
     // GET    /api/v1/payments/{id}            → show payment
     // PUT    /api/v1/payments/{id}            → update payment
     // DELETE /api/v1/payments/{id}            → delete payment
-    // Route::apiResource('payments', PaymentController::class);
+    Route::apiResource('payments', PaymentController::class);
 
     // ── Expenses ─────────────────────────────────────────────────────
     // GET    /api/v1/expenses                 → list expenses (?month=2025-01)
@@ -48,11 +52,11 @@ Route::prefix('v1')->group(function () {
     // GET    /api/v1/expenses/{id}            → show expense
     // PUT    /api/v1/expenses/{id}            → update expense
     // DELETE /api/v1/expenses/{id}            → delete expense
-    // Route::apiResource('expenses', ExpenseController::class);
+    Route::apiResource('expenses', ExpenseController::class);
 
     // ── Fee Types ────────────────────────────────────────────────────
     // GET    /api/v1/fee-types                → list active fee types
-    // Route::apiResource('fee-types', FeeTypeController::class)->only(['index', 'show']);
+    Route::apiResource('fee-types', FeeTypeController::class)->only(['index', 'show']);
 
     // ── Reports ──────────────────────────────────────────────────────
     // GET    /api/v1/reports/monthly-summary?year=2025    → yearly chart data
