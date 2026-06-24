@@ -1,7 +1,8 @@
 // hooks/useHouses.ts
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { housesApi } from '@/lib/api';
+import { housesApi } from '../lib/api';
+import type { House } from '@/types';
 
 export const HOUSE_KEYS = {
   all: ['houses'] as const,
@@ -61,6 +62,29 @@ export function useMoveOut(houseId: string) {
     mutationFn: (data: { move_out_date: string }) => housesApi.moveOut(houseId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: HOUSE_KEYS.all });
+    },
+  });
+}
+
+
+
+export function useCreateHouse() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<House>) => housesApi.create(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: HOUSE_KEYS.all });
+    },
+  });
+}
+
+export function useUpdateHouse(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<House>) => housesApi.update(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: HOUSE_KEYS.detail(id) });
+      qc.invalidateQueries({ queryKey: HOUSE_KEYS.list() });
     },
   });
 }
