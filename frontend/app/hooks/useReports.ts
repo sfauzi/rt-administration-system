@@ -1,7 +1,7 @@
 // hooks/useReports.ts
 
 import { useQuery } from '@tanstack/react-query';
-import { reportsApi } from '@/lib/api';
+import { reportsApi } from '../lib/api';
 
 export const REPORT_KEYS = {
   monthlySummary: (year: number) => ['reports', 'monthly-summary', year] as const,
