@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Filament\Resources\Expenses\ExpenseResource;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ExpenseResouce;
 use App\Models\Expense;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -31,11 +31,11 @@ class ExpenseController extends Controller
             ->orderByDesc('expense_date')
             ->get();
 
-        return ExpenseResource::collection($expenses);
+        return ExpenseResouce::collection($expenses);
     }
 
     // POST /api/v1/expenses
-    public function store(Request $request): ExpenseResource
+    public function store(Request $request): ExpenseResouce
     {
         $validated = $request->validate([
             'title'         => 'required|string|max:255',
