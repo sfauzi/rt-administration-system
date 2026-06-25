@@ -3,10 +3,11 @@
 // app/(dashboard)/residents/page.tsx
 // Route: /residents
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { User, Phone, Calendar, BadgeCheck, Plus, Pencil, Trash2, Search } from 'lucide-react';
 import { useResidents, useDeleteResident } from '@/app/hooks/useResidents';
+import { useQueryClient } from '@tanstack/react-query';
 import type { Resident } from '@/app/types';
 
 // ── Resident Card ─────────────────────────────────────────────────────────────
@@ -112,9 +113,30 @@ function ResidentCard({ resident, onDelete }: { resident: Resident; onDelete: (i
 export default function ResidentsPage() {
   const [search, setSearch]         = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+  const queryClient = useQueryClient();
 
-  const { data, isLoading } = useResidents({ is_active: undefined });
-  const deleteResident      = useDeleteResident();
+  // ✅ FIX: Force refetch when the page mounts or becomes visible
+  const { data, isLoading, refetch } = useResidents({ is_active: undefined });
+  const deleteResident = useDeleteResident();
+
+  // ✅ FIX: Refetch data when the page becomes visible (user returns from another page)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refetch();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [refetch]);
+
+  // ✅ FIX: Refetch when the component mounts
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   const residents = data?.data ?? [];
   const filtered  = residents.filter(r => {
@@ -131,7 +153,14 @@ export default function ResidentsPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this resident? This action cannot be undone.')) return;
-    await deleteResident.mutateAsync(id);
+    try {
+      await deleteResident.mutateAsync(id);
+      // ✅ FIX: Invalidate and refetch after successful deletion
+      await queryClient.invalidateQueries({ queryKey: ['residents'] });
+      await refetch();
+    } catch (error) {
+      console.error('Failed to delete resident:', error);
+    }
   };
 
   const types = [
