@@ -9,7 +9,7 @@ import { Plus, TrendingDown, Repeat2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useExpenses, useDeleteExpense } from '@/app/hooks/useExpenses';
 
-// Define the Expense interface
+// Define the Expense interface with optional fields
 interface Expense {
   id: string;
   title: string;
@@ -19,8 +19,8 @@ interface Expense {
   expense_month: string;
   description: string | null;
   is_recurring: boolean;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 function formatRupiah(amount: number) {
@@ -81,7 +81,7 @@ export default function ExpensesPage() {
           className="border rounded-lg px-3 py-2 text-sm text-neutral-500"
         />
         <div className="flex gap-2">
-          {['', 'salary', 'electricity', 'maintenance', 'other'].map(cat => (
+          {['', 'salary', 'electricity', 'maintenance', 'other'].map((cat: string) => (
             <button
               key={cat}
               onClick={() => setCategoryFilter(cat)}

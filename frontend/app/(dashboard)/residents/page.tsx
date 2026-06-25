@@ -89,7 +89,7 @@ export default function ResidentsPage() {
 
   // Client-side search filter
   const filtered = search
-    ? residents.filter(r =>
+    ? residents.filter((r: Resident) =>
         r.full_name.toLowerCase().includes(search.toLowerCase()) ||
         r.phone_number?.includes(search)
       )
@@ -153,7 +153,7 @@ export default function ResidentsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {filtered.map(resident => (
+          {filtered.map((resident: Resident) => (
             <ResidentCard key={resident.id} resident={resident} />
           ))}
         </div>

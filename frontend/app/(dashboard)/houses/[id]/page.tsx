@@ -11,15 +11,15 @@ import { useResidents } from '@/app/hooks/useResidents';
 import { ArrowLeft, UserPlus, LogOut } from 'lucide-react';
 import Link from 'next/link';
 
-// Define the Resident interface
+// Define the Resident interface with optional fields
 interface Resident {
   id: string;
   full_name: string;
-  nik: string;
-  phone: string;
+  nik?: string;
+  phone?: string;
   is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Define the HistoryRecord interface
@@ -31,8 +31,8 @@ interface HistoryRecord {
   move_out_date: string | null;
   is_current: boolean;
   resident: Resident;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export default function HouseDetailPage() {

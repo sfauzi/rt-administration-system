@@ -5,7 +5,7 @@ import {
   useEffect, useCallback, type ReactNode,
 } from 'react';
 import { authApi, tokenStorage } from './api';
-import type { AuthUser } from '@/types';
+import type { AuthUser } from '../types';
 
 interface AuthContextValue {
   user: AuthUser | null;

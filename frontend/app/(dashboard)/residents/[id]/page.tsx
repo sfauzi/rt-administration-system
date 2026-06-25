@@ -10,6 +10,48 @@ import { useResident } from '@/app/hooks/useResidents';
 import { usePayments } from '@/app/hooks/usePayments';
 import { format } from 'date-fns';
 
+// Define interfaces matching the global types
+interface Payment {
+  id: string;
+  amount: number;
+  billing_month: string;
+  months_covered: number;
+  status: 'paid' | 'partial' | 'unpaid';
+  fee_type_name?: string;  // Made optional
+  paid_at: string | null;
+  payment_method: string | null;
+  receipt_number?: string | null;
+  notes?: string | null;
+  created_at?: string;  // Made optional
+  updated_at?: string;  // Made optional
+}
+
+interface HouseResident {
+  id: string;
+  move_in_date: string;
+  move_out_date: string | null;
+  is_current: boolean;
+  house: {
+    id: string;
+    house_number: string;
+  };
+}
+
+interface Resident {
+  id: string;
+  full_name: string;
+  resident_type: 'permanent' | 'contract';
+  phone_number: string | null;
+  is_married: boolean;
+  is_active: boolean;
+  contract_start_date: string | null;
+  contract_end_date: string | null;
+  id_card_photo_url: string | null;
+  house_residents: HouseResident[];
+  created_at?: string;
+  updated_at?: string;
+}
+
 function formatRupiah(amount: number) {
   return new Intl.NumberFormat('id-ID', {
     style: 'currency', currency: 'IDR', minimumFractionDigits: 0,
@@ -21,9 +63,9 @@ export default function ResidentDetailPage() {
   const { data: residentData, isLoading } = useResident(id);
   const { data: paymentsData } = usePayments({ resident_id: id });
 
-  const resident = residentData?.data;
+  const resident = residentData?.data as Resident | undefined;
   const payments = paymentsData?.data ?? [];
-  const houseHistory = (resident as any)?.house_residents ?? [];
+  const houseHistory = resident?.house_residents ?? [];
 
   if (isLoading) return <div className="p-8 text-gray-400">Loading...</div>;
   if (!resident) return <div className="p-8 text-gray-400">Resident not found</div>;
@@ -62,7 +104,7 @@ export default function ResidentDetailPage() {
             <p className="text-xs text-gray-500 uppercase tracking-wide">Phone</p>
             <div className="flex items-center gap-1 mt-0.5">
               <Phone size={13} className="text-gray-400" />
-              <p className="text-sm">{resident.phone_number ?? '—'}</p>
+              <p className="text-sm text-neutral-700">{resident.phone_number ?? '—'}</p>
             </div>
           </div>
           <div>
@@ -114,7 +156,7 @@ export default function ResidentDetailPage() {
             <h2 className="font-semibold">House History</h2>
           </div>
           <div className="divide-y">
-            {houseHistory.map((record: any) => (
+            {houseHistory.map((record: HouseResident) => (
               <div key={record.id} className="p-5 flex items-center justify-between">
                 <div>
                   <Link
@@ -154,10 +196,10 @@ export default function ResidentDetailPage() {
           <p className="p-5 text-sm text-gray-400">No payment records found.</p>
         ) : (
           <div className="divide-y">
-            {payments.map(payment => (
+            {payments.map((payment: Payment) => (
               <div key={payment.id} className="p-5 flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-sm text-neutral-700">{payment.fee_type_name}</p>
+                  <p className="font-medium text-sm text-neutral-700">{payment.fee_type_name || '—'}</p>
                   <p className="text-xs text-gray-500">
                     {payment.billing_month}
                     {payment.months_covered > 1 && ` (${payment.months_covered} months)`}

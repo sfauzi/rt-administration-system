@@ -10,7 +10,7 @@ import { ArrowLeft, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { useHouse, useHousePayments } from '@/app/hooks/useHouses';
 
-// Define the Payment interface
+// Define the Payment interface matching the API response exactly
 interface Payment {
   id: string;
   house_id: string;
@@ -22,10 +22,10 @@ interface Payment {
   status: 'paid' | 'partial' | 'unpaid';
   paid_at: string | null;
   payment_method: string | null;
-  resident_name: string;
-  fee_type_name: string;
-  created_at: string;
-  updated_at: string;
+  resident_name?: string;  // Made optional to match global type
+  fee_type_name?: string;   // Made optional to match global type
+  created_at?: string;
+  updated_at?: string;
 }
 
 function formatRupiah(amount: number) {
@@ -118,8 +118,8 @@ export default function HousePaymentsPage() {
               {payments.map((payment: Payment) => (
                 <tr key={payment.id} className="hover:bg-gray-50">
                   <td className="px-5 py-3 font-medium">{payment.billing_month}</td>
-                  <td className="px-5 py-3">{payment.resident_name}</td>
-                  <td className="px-5 py-3">{payment.fee_type_name}</td>
+                  <td className="px-5 py-3">{payment.resident_name || '—'}</td>
+                  <td className="px-5 py-3">{payment.fee_type_name || '—'}</td>
                   <td className="px-5 py-3">{formatRupiah(payment.amount)}</td>
                   <td className="px-5 py-3">{payment.months_covered} mo.</td>
                   <td className="px-5 py-3">
