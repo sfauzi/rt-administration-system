@@ -1,8 +1,7 @@
-// app/(dashboard)/layout.tsx
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   Home, Users, CreditCard, TrendingDown,
   BarChart3, LogOut, ChevronRight, ShieldCheck,
@@ -13,23 +12,27 @@ import { useState } from 'react';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: BarChart3 },
-  { href: '/houses', label: 'Houses', icon: Home },
+  { href: '/houses',    label: 'Houses',    icon: Home },
   { href: '/residents', label: 'Residents', icon: Users },
-  { href: '/payments', label: 'Payments', icon: CreditCard },
-  { href: '/expenses', label: 'Expenses', icon: TrendingDown },
-  { href: '/reports', label: 'Reports', icon: BarChart3 },
+  { href: '/payments',  label: 'Payments',  icon: CreditCard },
+  { href: '/expenses',  label: 'Expenses',  icon: TrendingDown },
+  { href: '/reports',   label: 'Reports',   icon: BarChart3 },
 ];
 
 function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
   const { user, logout } = useAuth();
   const [loggingOut, setLoggingOut] = useState(false);
 
   const handleLogout = async () => {
     setLoggingOut(true);
-    await logout();
-    router.replace('/login');
+    try {
+      await logout();
+      // AuthGuard otomatis redirect ke /login saat isAuthenticated = false
+      // Tidak perlu router.replace() di sini → cegah double redirect
+    } catch {
+      setLoggingOut(false);
+    }
   };
 
   return (
@@ -50,7 +53,6 @@ function Sidebar() {
       {/* Nav */}
       <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
         {navItems.map(({ href, label, icon: Icon }) => {
-          // Active jika path sama atau sub-path (misal /houses/123 → /houses aktif)
           const isActive = pathname === href || pathname.startsWith(href + '/');
           return (
             <Link
@@ -70,7 +72,7 @@ function Sidebar() {
         })}
       </nav>
 
-      {/* User info + Logout */}
+      {/* User + Logout */}
       <div className="p-3 border-t border-gray-100">
         <div className="px-3 py-2 mb-1">
           <p className="text-sm font-medium text-gray-800 truncate">{user?.name}</p>
@@ -92,7 +94,6 @@ function Sidebar() {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    // AuthGuard melindungi semua halaman di dalam (dashboard) route group
     <AuthGuard>
       <div className="flex min-h-screen bg-gray-50">
         <Sidebar />
