@@ -62,17 +62,17 @@ class ExpenseController extends Controller
 
         $expense = Expense::create($validated);
 
-        return new ExpenseResource($expense);
+        return new ExpenseResouce($expense);
     }
 
     // GET /api/v1/expenses/{expense}
-    public function show(Expense $expense): ExpenseResource
+    public function show(Expense $expense): ExpenseResouce
     {
-        return new ExpenseResource($expense);
+        return new ExpenseResouce($expense);
     }
 
     // PUT /api/v1/expenses/{expense}
-    public function update(Request $request, Expense $expense): ExpenseResource
+    public function update(Request $request, Expense $expense): ExpenseResouce
     {
         $validated = $request->validate([
             'title'         => 'string|max:255',
@@ -95,7 +95,7 @@ class ExpenseController extends Controller
 
         $expense->update($validated);
 
-        return new ExpenseResource($expense);
+        return new ExpenseResouce($expense);
     }
 
     // DELETE /api/v1/expenses/{expense}

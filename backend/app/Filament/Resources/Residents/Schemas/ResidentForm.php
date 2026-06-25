@@ -40,6 +40,7 @@ class ResidentForm
                 Section::make('ID Card (KTP)')->schema([
                     FileUpload::make('id_card_photo')
                         ->image()
+                        ->disk('public')
                         ->directory('ktp-photos')
                         ->visibility('public')
                         ->label('KTP Photo')
