@@ -10,7 +10,7 @@ import {
   User, Phone, Upload, X, FileImage,
   CheckCircle2, AlertCircle, Loader2,
 } from 'lucide-react';
-import type { Resident } from '@/types';
+import type { Resident } from '@/app/types';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
