@@ -5,11 +5,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Plus, TrendingDown, Repeat2 } from 'lucide-react';
+import { Plus, TrendingDown, Repeat2, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useExpenses, useDeleteExpense } from '@/app/hooks/useExpenses';
 
-// Define the Expense interface with optional fields
+// ── Interface ─────────────────────────────────────────────────────────────────
 interface Expense {
   id: string;
   title: string;
@@ -29,12 +29,24 @@ function formatRupiah(amount: number) {
   }).format(amount);
 }
 
-const categoryColors: Record<string, string> = {
-  salary:      'bg-blue-100 text-blue-700',
-  electricity: 'bg-yellow-100 text-yellow-700',
-  maintenance: 'bg-orange-100 text-orange-700',
-  other:       'bg-gray-100 text-gray-600',
+const categoryStyles: Record<string, string> = {
+  salary:      'bg-blue-50 text-blue-700',
+  electricity: 'bg-amber-50 text-amber-700',
+  maintenance: 'bg-orange-50 text-orange-700',
+  other:       'bg-slate-100 text-slate-600',
 };
+
+const categories = ['', 'salary', 'electricity', 'maintenance', 'other'];
+
+// ── Shared table head cell ────────────────────────────────────────────────────
+function Th({ children, right }: { children: React.ReactNode; right?: boolean }) {
+  return (
+    <th className={`px-5 py-3 text-xs font-semibold uppercase tracking-wider
+                    text-gray-400 ${right ? 'text-right' : 'text-left'}`}>
+      {children}
+    </th>
+  );
+}
 
 export default function ExpensesPage() {
   const [month, setMonth] = useState(format(new Date(), 'yyyy-MM'));
@@ -46,8 +58,8 @@ export default function ExpensesPage() {
   });
   const deleteExpense = useDeleteExpense();
 
-  const expenses = data?.data ?? [];
-  const totalExpenses = expenses.reduce((sum: number, expense: Expense) => sum + expense.amount, 0);
+  const expenses      = data?.data ?? [];
+  const totalExpenses = expenses.reduce((sum: number, e: Expense) => sum + e.amount, 0);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this expense?')) return;
@@ -55,40 +67,67 @@ export default function ExpensesPage() {
   };
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-slate-50 p-8 space-y-6">
+
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-black">Expenses</h1>
-          <p className="text-gray-500">
+          <p className="text-xs font-semibold tracking-widest text-blue-500 uppercase mb-1">
+            RT Administration
+          </p>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Expenses</h1>
+          <p className="text-sm text-gray-400 mt-0.5">
             Total for {month}:{' '}
-            <strong className="text-red-600">{formatRupiah(totalExpenses)}</strong>
+            <span className="font-semibold text-red-500">{formatRupiah(totalExpenses)}</span>
           </p>
         </div>
         <Link
           href="/expenses/new"
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"
+          className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700
+                     text-white px-4 py-2 rounded-lg text-sm font-medium
+                     transition-colors shadow-sm"
         >
-          <Plus size={16} /> Add Expense
+          <Plus size={16} />
+          Add Expense
         </Link>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-3 flex-wrap">
+      {/* ── Summary Card ───────────────────────────────────────────────────── */}
+      <div className="bg-gradient-to-br from-blue-600 to-blue-500 rounded-2xl shadow-sm p-6
+                      flex items-center justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-white/70 mb-1">
+            Total Expenses
+          </p>
+          <p className="text-3xl font-bold text-white tracking-tight">
+            {formatRupiah(totalExpenses)}
+          </p>
+          <p className="text-xs text-white/60 mt-1">{month}</p>
+        </div>
+        <div className="p-4 rounded-2xl bg-white/15">
+          <TrendingDown size={28} className="text-white" />
+        </div>
+      </div>
+
+      {/* ── Filters ────────────────────────────────────────────────────────── */}
+      <div className="flex gap-3 flex-wrap items-center">
         <input
           type="month"
           value={month}
           onChange={e => setMonth(e.target.value)}
-          className="border rounded-lg px-3 py-2 text-sm text-neutral-500"
+          className="border border-blue-100 bg-white text-blue-700 font-medium
+                     rounded-lg px-3 py-2 text-sm focus:outline-none
+                     focus:ring-2 focus:ring-blue-300 cursor-pointer shadow-xs"
         />
-        <div className="flex gap-2">
-          {['', 'salary', 'electricity', 'maintenance', 'other'].map((cat: string) => (
+        <div className="flex gap-2 flex-wrap">
+          {categories.map((cat: string) => (
             <button
               key={cat}
               onClick={() => setCategoryFilter(cat)}
               className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
                 categoryFilter === cat
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white border text-gray-600 hover:bg-gray-50'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-white border border-gray-200 text-gray-600 hover:bg-slate-50'
               }`}
             >
               {cat === '' ? 'All' : cat}
@@ -97,77 +136,115 @@ export default function ExpensesPage() {
         </div>
       </div>
 
-      {/* Expense List */}
-      <div className="bg-white rounded-xl border overflow-hidden">
+      {/* ── Expense Table ──────────────────────────────────────────────────── */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         {isLoading ? (
-          <div className="p-8 text-center text-gray-400">Loading...</div>
+          <div className="p-8 space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-12 bg-slate-100 rounded-xl animate-pulse" />
+            ))}
+          </div>
         ) : expenses.length === 0 ? (
-          <div className="p-12 text-center text-gray-400">
-            <TrendingDown size={36} className="mx-auto mb-2 opacity-30" />
-            <p>No expenses for {month}</p>
+          <div className="py-20 flex flex-col items-center justify-center gap-3">
+            <div className="p-4 rounded-2xl bg-slate-100">
+              <TrendingDown size={28} className="text-slate-300" />
+            </div>
+            <p className="text-sm font-medium text-gray-500">No expenses recorded</p>
+            <p className="text-xs text-gray-400">
+              {categoryFilter
+                ? `No "${categoryFilter}" expenses for ${month}`
+                : `No expenses found for ${month}`
+              }
+            </p>
+            <Link
+              href="/expenses/new"
+              className="mt-1 inline-flex items-center gap-1.5 text-sm
+                         text-blue-600 hover:underline font-medium"
+            >
+              <Plus size={14} /> Add first expense
+            </Link>
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="px-5 py-3 text-left font-medium text-gray-500">Title</th>
-                <th className="px-5 py-3 text-left font-medium text-gray-500">Category</th>
-                <th className="px-5 py-3 text-left font-medium text-gray-500">Amount</th>
-                <th className="px-5 py-3 text-left font-medium text-gray-500">Date</th>
-                <th className="px-5 py-3 text-left font-medium text-gray-500">Recurring</th>
-                <th className="px-5 py-3 text-right font-medium text-gray-500">Actions</th>
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50/60">
+                <Th>Title</Th>
+                <Th>Category</Th>
+                <Th>Amount</Th>
+                <Th>Date</Th>
+                <Th>Recurring</Th>
+                <Th right>Actions</Th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-slate-50">
               {expenses.map((expense: Expense) => (
-                <tr key={expense.id} className="hover:bg-gray-50">
-                  <td className="px-5 py-3">
-                    <p className="font-medium text-neutral-500">{expense.title}</p>
+                <tr key={expense.id} className="hover:bg-slate-50 transition-colors">
+
+                  {/* Title */}
+                  <td className="px-5 py-4">
+                    <p className="font-semibold text-gray-800">{expense.title}</p>
                     {expense.description && (
-                      <p className="text-xs text-gray-400 truncate max-w-xs">
+                      <p className="text-xs text-gray-400 truncate max-w-xs mt-0.5">
                         {expense.description}
                       </p>
                     )}
                   </td>
-                  <td className="px-5 py-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${
-                      categoryColors[expense.category] ?? 'bg-gray-100 text-gray-600'
+
+                  {/* Category */}
+                  <td className="px-5 py-4">
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold capitalize ${
+                      categoryStyles[expense.category] ?? 'bg-slate-100 text-slate-600'
                     }`}>
                       {expense.category}
                     </span>
                   </td>
-                  <td className="px-5 py-3 font-semibold text-neutral-500">
+
+                  {/* Amount */}
+                  <td className="px-5 py-4 font-bold text-gray-900">
                     {formatRupiah(expense.amount)}
                   </td>
-                  <td className="px-5 py-3 text-gray-500">
+
+                  {/* Date */}
+                  <td className="px-5 py-4 text-gray-400 font-mono text-xs">
                     {format(new Date(expense.expense_date), 'dd MMM yyyy')}
                   </td>
-                  <td className="px-5 py-3">
-                    {expense.is_recurring && (
-                      <div className="flex items-center gap-1 text-blue-600">
-                        <Repeat2 size={14} />
-                        <span className="text-xs">Monthly</span>
-                      </div>
+
+                  {/* Recurring */}
+                  <td className="px-5 py-4">
+                    {expense.is_recurring ? (
+                      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5
+                                       rounded-full font-semibold bg-blue-50 text-blue-700">
+                        <Repeat2 size={10} />
+                        Monthly
+                      </span>
+                    ) : (
+                      <span className="text-xs text-slate-300">—</span>
                     )}
                   </td>
-                  <td className="px-5 py-3 text-right">
+
+                  {/* Actions */}
+                  <td className="px-5 py-4 text-right">
                     <button
                       onClick={() => handleDelete(expense.id)}
-                      className="text-xs text-red-500 hover:text-red-700"
+                      disabled={deleteExpense.isPending}
+                      className="inline-flex items-center gap-1 text-xs text-slate-400
+                                 hover:text-red-500 transition-colors disabled:opacity-40"
                     >
+                      <Trash2 size={13} />
                       Delete
                     </button>
                   </td>
+
                 </tr>
               ))}
             </tbody>
-            {/* Footer: Total */}
-            <tfoot className="border-t bg-gray-50">
-              <tr>
-                <td colSpan={2} className="px-5 py-3 text-right font-medium text-gray-600">
-                  Total
+            <tfoot>
+              <tr className="border-t-2 border-slate-100 bg-slate-50/60">
+                <td colSpan={2} className="px-5 py-4 text-right text-xs font-semibold
+                                            uppercase tracking-wider text-gray-400">
+                  Total Expenses
                 </td>
-                <td className="px-5 py-3 font-bold text-red-600">
+                <td className="px-5 py-4 font-bold text-red-500 text-base">
                   {formatRupiah(totalExpenses)}
                 </td>
                 <td colSpan={3} />
@@ -176,6 +253,7 @@ export default function ExpensesPage() {
           </table>
         )}
       </div>
+
     </div>
   );
 }
