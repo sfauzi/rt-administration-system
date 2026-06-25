@@ -10,20 +10,20 @@ import { useResident } from '@/app/hooks/useResidents';
 import { usePayments } from '@/app/hooks/usePayments';
 import { format } from 'date-fns';
 
-// Define interfaces
+// Define interfaces matching the global types
 interface Payment {
   id: string;
   amount: number;
   billing_month: string;
   months_covered: number;
   status: 'paid' | 'partial' | 'unpaid';
-  fee_type_name: string;
+  fee_type_name?: string;  // Made optional
   paid_at: string | null;
   payment_method: string | null;
-  receipt_number: string | null;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
+  receipt_number?: string | null;
+  notes?: string | null;
+  created_at?: string;  // Made optional
+  updated_at?: string;  // Made optional
 }
 
 interface HouseResident {
@@ -48,8 +48,8 @@ interface Resident {
   contract_end_date: string | null;
   id_card_photo_url: string | null;
   house_residents: HouseResident[];
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 function formatRupiah(amount: number) {
@@ -199,7 +199,7 @@ export default function ResidentDetailPage() {
             {payments.map((payment: Payment) => (
               <div key={payment.id} className="p-5 flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-sm text-neutral-700">{payment.fee_type_name}</p>
+                  <p className="font-medium text-sm text-neutral-700">{payment.fee_type_name || '—'}</p>
                   <p className="text-xs text-gray-500">
                     {payment.billing_month}
                     {payment.months_covered > 1 && ` (${payment.months_covered} months)`}
