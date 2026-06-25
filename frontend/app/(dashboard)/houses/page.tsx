@@ -8,16 +8,17 @@ import Link from 'next/link';
 import { Home, User, Plus } from 'lucide-react';
 import { useHouses } from '@/app/hooks/useHouses';
 
-// Define the House interface matching the global type
+// Define the House interface matching the global type exactly
 interface House {
   id: string;
   house_number: string;
   address?: string;
-  house_type: 'permanent' | 'non_permanent' | 'temporary'; // Added 'temporary'
+  house_type: 'permanent' | 'non_permanent' | 'temporary';
   occupancy_status: 'occupied' | 'vacant';
-  current_resident: {
+  current_resident?: {
     id: string;
     full_name?: string;
+    // Add other resident fields if needed
   } | null;
   created_at?: string;
   updated_at?: string;
