@@ -46,12 +46,12 @@ export default function ReportsPage() {
   const chartData = summary?.data ?? [];
   const currentMonth = format(new Date(), 'yyyy-MM');
 
-  // Custom formatter for tooltips that handles any value type
-  const formatTooltipValue = (value: any, name: string) => {
+  // Custom formatter for tooltips that handles any value and name types
+  const formatTooltipValue = (value: any, name: any) => {
     if (value === undefined || value === null || typeof value === 'string') {
-      return ['-', name];
+      return ['-', name || ''];
     }
-    return [formatRupiah(Number(value)), name];
+    return [formatRupiah(Number(value)), name || ''];
   };
 
   return (
