@@ -56,7 +56,7 @@ export default function HousePaymentsPage() {
         </Link>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">
+            <h1 className="text-2xl font-bold text-black">
               Payments — House {house?.house_number}
             </h1>
             <p className="text-gray-500">
@@ -75,12 +75,12 @@ export default function HousePaymentsPage() {
 
       {/* Month filter */}
       <div className="flex items-center gap-3">
-        <label className="text-sm font-medium">Filter by month:</label>
+        <label className="text-sm font-medium text-gray-500">Filter by month:</label>
         <input
           type="month"
           value={month}
           onChange={e => setMonth(e.target.value)}
-          className="border rounded-lg px-3 py-2 text-sm"
+          className="border rounded-lg px-3 py-2 text-sm text-neutral-600"
         />
         {month && (
           <button
@@ -117,12 +117,12 @@ export default function HousePaymentsPage() {
             <tbody className="divide-y">
               {payments.map((payment: Payment) => (
                 <tr key={payment.id} className="hover:bg-gray-50">
-                  <td className="px-5 py-3 font-medium">{payment.billing_month}</td>
-                  <td className="px-5 py-3">{payment.resident_name || '—'}</td>
-                  <td className="px-5 py-3">{payment.fee_type_name || '—'}</td>
-                  <td className="px-5 py-3">{formatRupiah(payment.amount)}</td>
-                  <td className="px-5 py-3">{payment.months_covered} mo.</td>
-                  <td className="px-5 py-3">
+                  <td className="px-5 py-3 font-medium text-neutral-600">{payment.billing_month}</td>
+                  <td className="px-5 py-3 text-neutral-600">{payment.resident_name || '—'}</td>
+                  <td className="px-5 py-3 text-neutral-600">{payment.fee_type_name || '—'}</td>
+                  <td className="px-5 py-3 text-neutral-600">{formatRupiah(payment.amount)}</td>
+                  <td className="px-5 py-3 text-neutral-600">{payment.months_covered} mo.</td>
+                  <td className="px-5 py-3 text-neutral-600">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                       payment.status === 'paid'
                         ? 'bg-green-100 text-green-700'

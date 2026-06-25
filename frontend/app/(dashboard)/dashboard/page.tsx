@@ -64,9 +64,8 @@ export default function DashboardPage() {
           </div>
           <div className="bg-white rounded-xl border p-6">
             <p className="text-sm text-gray-500">Net Balance {year}</p>
-            <p className={`text-2xl font-bold mt-1 ${
-              summary.summary.net_balance >= 0 ? 'text-blue-600' : 'text-red-600'
-            }`}>
+            <p className={`text-2xl font-bold mt-1 ${summary.summary.net_balance >= 0 ? 'text-blue-600' : 'text-red-600'
+              }`}>
               {formatRupiah(summary.summary.net_balance)}
             </p>
           </div>
@@ -85,12 +84,11 @@ export default function DashboardPage() {
               <XAxis dataKey="month_label" />
               <YAxis tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
               <Tooltip
-              formatter={(v) =>
-                typeof v === 'number'
-                  ? formatRupiah(v)
-                  : '-'
-              }
-            />
+                formatter={(v) => {
+                  const num = Number(v);
+                  return !isNaN(num) ? formatRupiah(num) : '-';
+                }}
+              />
               <Legend />
               <Bar dataKey="income" fill="#22c55e" name="Income" radius={[4, 4, 0, 0]} />
               <Bar dataKey="expenses" fill="#ef4444" name="Expenses" radius={[4, 4, 0, 0]} />
@@ -108,11 +106,10 @@ export default function DashboardPage() {
             <XAxis dataKey="month_label" />
             <YAxis tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
             <Tooltip
-              formatter={(v) =>
-                typeof v === 'number'
-                  ? formatRupiah(v)
-                  : '-'
-              }
+              formatter={(v) => {
+                const num = Number(v);
+                return !isNaN(num) ? formatRupiah(num) : '-';
+              }}
             />
             <Line
               type="monotone" dataKey="balance" stroke="#3b82f6"
@@ -132,17 +129,15 @@ export default function DashboardPage() {
           {paymentStatus?.houses.map(h => (
             <div
               key={h.house_id}
-              className={`rounded-lg border p-3 ${
-                h.all_paid
-                  ? 'bg-green-50 border-green-200'
-                  : 'bg-yellow-50 border-yellow-200'
-              }`}
+              className={`rounded-lg border p-3 ${h.all_paid
+                ? 'bg-green-50 border-green-200'
+                : 'bg-yellow-50 border-yellow-200'
+                }`}
             >
               <p className="font-semibold text-sm text-neutral-700">{h.house_number}</p>
               <p className="text-xs text-gray-500 truncate">{h.resident_name}</p>
-              <p className={`text-xs font-medium mt-1 ${
-                h.all_paid ? 'text-green-700' : 'text-yellow-700'
-              }`}>
+              <p className={`text-xs font-medium mt-1 ${h.all_paid ? 'text-green-700' : 'text-yellow-700'
+                }`}>
                 {h.all_paid ? '✓ Paid' : '⏳ Pending'}
               </p>
             </div>
