@@ -26,56 +26,130 @@ class PaymentForm
                         ->required()
                         ->searchable()
                         ->reactive()
-                        ->afterStateUpdated(fn($state, Set $set) => $set('resident_id', null)),
+                        ->afterStateUpdated(function ($state, Set $set) {
+                            // Reset resident_id when house changes
+                            $set('resident_id', null);
+
+                            // Auto-fill resident if only one active resident in the house
+                            if ($state) {
+                                $house = House::find($state);
+                                if ($house) {
+                                    $currentResident = $house->residents()
+                                        ->wherePivot('is_current', true)
+                                        ->first();
+
+                                    if ($currentResident) {
+                                        $set('resident_id', $currentResident->id);
+                                    }
+                                }
+                            }
+                        }),
 
                     Select::make('resident_id')
                         ->label('Resident')
                         ->options(function (Get $get) {
                             $houseId = $get('house_id');
-                            if (!$houseId) return [];
+                            if (!$houseId) {
+                                return [];
+                            }
+
                             $house = House::find($houseId);
-                            return $house?->residents()->pluck('full_name', 'residents.id') ?? [];
+                            if (!$house) {
+                                return [];
+                            }
+
+                            // Get all residents with their current status for better UX
+                            return $house->residents()
+                                ->select('residents.id', 'residents.full_name')
+                                ->get()
+                                ->mapWithKeys(function ($resident) use ($house) {
+                                    // Check if this resident is current using the pivot relationship
+                                    $isCurrent = $resident->pivot->is_current ?? false;
+                                    $label = $resident->full_name;
+                                    if ($isCurrent) {
+                                        $label .= ' (Current)';
+                                    }
+                                    return [$resident->id => $label];
+                                })
+                                ->toArray();
                         })
                         ->required()
-                        ->searchable(),
+                        ->searchable()
+                        ->reactive(),
 
                     Select::make('fee_type_id')
                         ->label('Fee Type')
                         ->options(FeeType::where('is_active', true)->pluck('name', 'id'))
-                        ->required(),
+                        ->required()
+                        ->reactive()
+                        ->afterStateUpdated(function ($state, Get $get, Set $set) {
+                            // Auto-fill amount when fee type is selected
+                            if ($state) {
+                                $feeType = FeeType::find($state);
+                                if ($feeType) {
+                                    $monthsCovered = (int) $get('months_covered') ?: 1;
+                                    $set('amount', $feeType->amount * $monthsCovered);
+                                }
+                            }
+                        }),
 
                     TextInput::make('amount')
                         ->numeric()
                         ->prefix('Rp')
-                        ->required(),
+                        ->required()
+                        ->reactive(),
 
                     TextInput::make('billing_month')
                         ->label('Billing Month (YYYY-MM)')
                         ->placeholder('2025-01')
-                        ->required(),
+                        ->required()
+                        ->default(now()->format('Y-m')),
 
-                    TextInput::make('months_covered')
-                        ->numeric()
-                        ->default(1)
+                    Select::make('months_covered')
                         ->label('Months Covered')
-                        ->helperText('1 = monthly, 12 = full year'),
+                        ->options([
+                            1 => '1 month',
+                            3 => '3 months',
+                            6 => '6 months',
+                            12 => '12 months (1 year)',
+                        ])
+                        ->default(1)
+                        ->required()
+                        ->reactive()
+                        ->afterStateUpdated(function ($state, Get $get, Set $set) {
+                            // Update amount when months covered changes
+                            $feeTypeId = $get('fee_type_id');
+                            if ($feeTypeId) {
+                                $feeType = FeeType::find($feeTypeId);
+                                if ($feeType) {
+                                    $set('amount', $feeType->amount * (int) $state);
+                                }
+                            }
+                        }),
 
                     Select::make('status')
                         ->options(['paid' => 'Paid', 'unpaid' => 'Unpaid', 'partial' => 'Partial'])
-                        ->required(),
+                        ->required()
+                        ->default('paid'),
 
-                    DatePicker::make('paid_at')->label('Payment Date'),
+                    DatePicker::make('paid_at')
+                        ->label('Payment Date')
+                        ->default(now()),
 
                     Select::make('payment_method')
                         ->options([
                             'cash' => 'Cash',
                             'bank_transfer' => 'Bank Transfer',
                             'qris' => 'QRIS',
-                        ]),
+                        ])
+                        ->default('cash'),
 
-                    TextInput::make('receipt_number'),
+                    TextInput::make('receipt_number')
+                        ->placeholder('Optional receipt number'),
 
-                    Textarea::make('notes')->columnSpanFull(),
+                    Textarea::make('notes')
+                        ->placeholder('Optional notes')
+                        ->columnSpanFull(),
                 ])->columns(2)->columnSpanFull(),
             ]);
     }
