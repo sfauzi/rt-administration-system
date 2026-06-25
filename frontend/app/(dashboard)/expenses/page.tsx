@@ -9,6 +9,20 @@ import { Plus, TrendingDown, Repeat2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useExpenses, useDeleteExpense } from '@/app/hooks/useExpenses';
 
+// Define the Expense interface
+interface Expense {
+  id: string;
+  title: string;
+  category: string;
+  amount: number;
+  expense_date: string;
+  expense_month: string;
+  description: string | null;
+  is_recurring: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 function formatRupiah(amount: number) {
   return new Intl.NumberFormat('id-ID', {
     style: 'currency', currency: 'IDR', minimumFractionDigits: 0,
@@ -33,8 +47,7 @@ export default function ExpensesPage() {
   const deleteExpense = useDeleteExpense();
 
   const expenses = data?.data ?? [];
-  // Fix: Explicitly type the parameters in reduce
-  const totalExpenses = expenses.reduce((sum: number, expense: any) => sum + expense.amount, 0);
+  const totalExpenses = expenses.reduce((sum: number, expense: Expense) => sum + expense.amount, 0);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this expense?')) return;
@@ -106,7 +119,7 @@ export default function ExpensesPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {expenses.map(expense => (
+              {expenses.map((expense: Expense) => (
                 <tr key={expense.id} className="hover:bg-gray-50">
                   <td className="px-5 py-3">
                     <p className="font-medium text-neutral-500">{expense.title}</p>
