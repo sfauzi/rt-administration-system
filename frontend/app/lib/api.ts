@@ -4,7 +4,7 @@ import type {
   House, Resident, Payment, Expense, FeeType,
   MonthlySummaryReport, HouseResident, HousePaymentStatus,
   ApiCollection, ApiItem,
-} from '@/types';
+} from '../types';
 import { AuthUser, LoginResponse } from '../types';
 
 const api = axios.create({

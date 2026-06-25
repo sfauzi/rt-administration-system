@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { housesApi } from '../lib/api';
-import type { House } from '@/types';
+import type { House } from '../types';
 
 export const HOUSE_KEYS = {
   all: ['houses'] as const,
