@@ -8,13 +8,28 @@ import Link from 'next/link';
 import { Home, User, Plus } from 'lucide-react';
 import { useHouses } from '@/app/hooks/useHouses';
 
+// Define the House interface
+interface House {
+  id: string;
+  house_number: string;
+  address: string;
+  house_type: 'permanent' | 'non_permanent';
+  occupancy_status: 'occupied' | 'vacant';
+  current_resident: {
+    id: string;
+    full_name: string;
+  } | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export default function HousesPage() {
   const [filter, setFilter] = useState<string>('');
   const { data, isLoading } = useHouses();
 
   const houses = data?.data ?? [];
   const filtered = filter
-    ? houses.filter(h => h.occupancy_status === filter)
+    ? houses.filter((h: House) => h.occupancy_status === filter)
     : houses;
 
   return (
@@ -53,7 +68,7 @@ export default function HousesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {filtered.map(house => (
+          {filtered.map((house: House) => (
             <Link key={house.id} href={`/houses/${house.id}`}>
               <div className={`bg-white rounded-xl border p-5 hover:shadow-md transition-shadow cursor-pointer ${
                 house.occupancy_status === 'occupied'
