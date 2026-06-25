@@ -11,6 +11,30 @@ import { useResidents } from '@/app/hooks/useResidents';
 import { ArrowLeft, UserPlus, LogOut } from 'lucide-react';
 import Link from 'next/link';
 
+// Define the Resident interface
+interface Resident {
+  id: string;
+  full_name: string;
+  nik: string;
+  phone: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Define the HistoryRecord interface
+interface HistoryRecord {
+  id: string;
+  resident_id: string;
+  house_id: string;
+  move_in_date: string;
+  move_out_date: string | null;
+  is_current: boolean;
+  resident: Resident;
+  created_at: string;
+  updated_at: string;
+}
+
 export default function HouseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: houseData, isLoading } = useHouse(id);
@@ -111,7 +135,7 @@ export default function HouseDetailPage() {
                 className="w-full border rounded-lg px-3 py-2 text-sm"
               >
                 <option value="">Select resident...</option>
-                {availableResidents.map(r => (
+                {availableResidents.map((r: Resident) => (
                   <option key={r.id} value={r.id}>{r.full_name}</option>
                 ))}
               </select>
@@ -153,7 +177,7 @@ export default function HouseDetailPage() {
           {history.length === 0 && (
             <p className="p-5 text-sm text-gray-400">No resident history yet.</p>
           )}
-          {history.map(record => (
+          {history.map((record: HistoryRecord) => (
             <div key={record.id} className="p-5 flex items-center justify-between">
               <div>
                 <p className="font-medium text-neutral-700">{record.resident.full_name}</p>
