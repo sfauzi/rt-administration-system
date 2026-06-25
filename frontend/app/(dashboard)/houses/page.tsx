@@ -12,15 +12,15 @@ import { useHouses } from '@/app/hooks/useHouses';
 interface House {
   id: string;
   house_number: string;
-  address: string;
+  address?: string;
   house_type: 'permanent' | 'non_permanent';
   occupancy_status: 'occupied' | 'vacant';
   current_resident: {
     id: string;
-    full_name: string;
+    full_name?: string;
   } | null;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export default function HousesPage() {
