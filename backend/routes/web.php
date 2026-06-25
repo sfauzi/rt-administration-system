@@ -4,7 +4,7 @@ use App\Http\Controllers\SsoController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('filament.admin.auth.login');
 });
 
 // ── SSO Routes ────────────────────────────────────────────────────────────────
