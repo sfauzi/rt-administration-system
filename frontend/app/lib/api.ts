@@ -16,7 +16,7 @@ const api = axios.create({
   // withCredentials dihapus — tidak pakai Sanctum cookie di Next.js
 });
 
-// ── Token management helpers ─────────────────────────────────────────────────
+// ── Token management ─────────────────────────────────────────────────────────
 
 const TOKEN_KEY = 'rt_admin_token';
 
@@ -33,7 +33,7 @@ export const tokenStorage = {
   },
 };
 
-// ── Axios interceptor — inject token ke setiap request ──────────────────────
+// ── Interceptors ─────────────────────────────────────────────────────────────
 
 api.interceptors.request.use((config) => {
   const token = tokenStorage.get();
@@ -43,12 +43,14 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Interceptor response — handle 401 (token expired/invalid)
+// BUGFIX: flag untuk mencegah redirect loop saat /auth/me itu sendiri 401
+let isRedirecting = false;
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Token expired atau invalid — hapus dan redirect ke login
+    if (error.response?.status === 401 && !isRedirecting) {
+      isRedirecting = true;
       tokenStorage.remove();
       if (typeof window !== 'undefined') {
         window.location.href = '/login';
@@ -61,15 +63,13 @@ api.interceptors.response.use(
 // ── Auth API ─────────────────────────────────────────────────────────────────
 
 export const authApi = {
-  // POST /api/v1/auth/login
   login: (credentials: { email: string; password: string }) =>
     api.post<LoginResponse>('/auth/login', credentials).then(r => r.data),
 
-  // POST /api/v1/auth/logout
   logout: () =>
     api.post('/auth/logout').then(r => r.data),
 
-  // GET /api/v1/auth/me
+  // Dipakai oleh AuthProvider mount + callback page
   me: () =>
     api.get<{ user: AuthUser }>('/auth/me').then(r => r.data),
 };
