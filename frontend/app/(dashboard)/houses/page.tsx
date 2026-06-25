@@ -8,12 +8,12 @@ import Link from 'next/link';
 import { Home, User, Plus } from 'lucide-react';
 import { useHouses } from '@/app/hooks/useHouses';
 
-// Define the House interface
+// Define the House interface matching the global type
 interface House {
   id: string;
   house_number: string;
   address?: string;
-  house_type: 'permanent' | 'non_permanent';
+  house_type: 'permanent' | 'non_permanent' | 'temporary'; // Added 'temporary'
   occupancy_status: 'occupied' | 'vacant';
   current_resident: {
     id: string;
@@ -86,6 +86,8 @@ export default function HousesPage() {
                   <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                     house.house_type === 'permanent'
                       ? 'bg-blue-100 text-blue-700'
+                      : house.house_type === 'temporary'
+                      ? 'bg-purple-100 text-purple-700'
                       : 'bg-orange-100 text-orange-700'
                   }`}>
                     {house.house_type}
