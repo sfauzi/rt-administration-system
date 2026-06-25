@@ -9,7 +9,7 @@ import { Plus, TrendingUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { usePayments } from '@/app/hooks/usePayments';
 
-// Define the Payment interface
+// Define the Payment interface matching the global type
 interface Payment {
   id: string;
   house_id: string;
@@ -21,13 +21,13 @@ interface Payment {
   status: 'paid' | 'partial' | 'unpaid';
   paid_at: string | null;
   payment_method: string | null;
-  receipt_number: string | null;
-  notes: string | null;
-  resident_name: string;
-  fee_type_name: string;
-  house_number: string;
-  created_at: string;
-  updated_at: string;
+  receipt_number?: string | null;
+  notes?: string | null;
+  resident_name?: string;
+  fee_type_name?: string;
+  house_number?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 function formatRupiah(amount: number) {
@@ -117,9 +117,9 @@ export default function PaymentsPage() {
             <tbody className="divide-y">
               {payments.map((payment: Payment) => (
                 <tr key={payment.id} className="hover:bg-gray-50">
-                  <td className="px-5 py-3 font-medium text-neutral-500">{payment.house_number}</td>
-                  <td className="px-5 py-3 text-neutral-500">{payment.resident_name}</td>
-                  <td className="px-5 py-3 text-neutral-500">{payment.fee_type_name}</td>
+                  <td className="px-5 py-3 font-medium text-neutral-500">{payment.house_number || '—'}</td>
+                  <td className="px-5 py-3 text-neutral-500">{payment.resident_name || '—'}</td>
+                  <td className="px-5 py-3 text-neutral-500">{payment.fee_type_name || '—'}</td>
                   <td className="px-5 py-3 font-semibold text-neutral-500">{formatRupiah(payment.amount)}</td>
                   <td className="px-5 py-3 text-gray-500">
                     {payment.billing_month}
