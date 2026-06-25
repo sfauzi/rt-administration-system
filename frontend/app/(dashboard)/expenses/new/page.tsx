@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { useCreateExpense } from '@/app/hooks/useExpenses';
+import { ExpenseCategory } from '@/app/types'; // Import the enum type
 
 export default function NewExpensePage() {
   const router = useRouter();
@@ -16,7 +17,7 @@ export default function NewExpensePage() {
 
   const [form, setForm] = useState({
     title: '',
-    category: 'salary' as string,
+    category: 'salary' as ExpenseCategory, // Change to ExpenseCategory type
     amount: '',
     expense_date: format(new Date(), 'yyyy-MM-dd'),
     expense_month: format(new Date(), 'yyyy-MM'),
@@ -49,6 +50,7 @@ export default function NewExpensePage() {
     await createExpense.mutateAsync({
       ...form,
       amount: Number(form.amount),
+      category: form.category as ExpenseCategory, // Ensure it's typed correctly
     });
     router.push('/expenses');
   };
