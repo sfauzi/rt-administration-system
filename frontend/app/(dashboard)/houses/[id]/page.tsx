@@ -125,14 +125,14 @@ export default function HouseDetailPage() {
       {/* Assign Resident Form */}
       {showAssignForm && (
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-          <h3 className="font-semibold mb-4">Assign New Resident</h3>
+          <h3 className="font-semibold mb-4 text-neutral-800">Assign New Resident</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Resident</label>
+              <label className="block text-sm font-medium mb-1 text-neutral-600">Resident</label>
               <select
                 value={assignForm.resident_id}
                 onChange={e => setAssignForm(f => ({ ...f, resident_id: e.target.value }))}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full border rounded-lg px-3 py-2 text-sm text-neutral-500"
               >
                 <option value="">Select resident...</option>
                 {availableResidents.map((r: Resident) => (
@@ -141,12 +141,12 @@ export default function HouseDetailPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Move-in Date</label>
+              <label className="block text-sm font-medium mb-1 text-neutral-600">Move-in Date</label>
               <input
                 type="date"
                 value={assignForm.move_in_date}
                 onChange={e => setAssignForm(f => ({ ...f, move_in_date: e.target.value }))}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+                className="w-full border rounded-lg px-3 py-2 text-sm text-neutral-500"
               />
             </div>
           </div>
