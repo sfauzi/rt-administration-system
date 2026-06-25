@@ -9,6 +9,7 @@ use App\Http\Resources\PaymentResource;
 use App\Models\House;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 
 class HouseController extends Controller
 {
@@ -132,5 +133,44 @@ class HouseController extends Controller
             ->get();
 
         return PaymentResource::collection($payments);
+    }
+
+    public function destroy(string $id)
+    {
+        $house = House::findOrFail($id);
+        
+        // Check if house has any residents
+        if ($house->residents()->exists()) {
+            return response()->json([
+                'message' => 'Cannot delete house with existing residents. Please move out all residents first.',
+            ], 422);
+        }
+
+        // Check if house has any payments
+        if ($house->payments()->exists()) {
+            return response()->json([
+                'message' => 'Cannot delete house with existing payment records.',
+            ], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Delete house residents records
+            $house->residents()->detach();
+            
+            // Delete the house
+            $house->delete();
+            
+            DB::commit();
+            
+            return response()->json([
+                'message' => 'House deleted successfully',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Failed to delete house: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }
