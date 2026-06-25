@@ -10,7 +10,7 @@ import { ArrowLeft, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { useHouse, useHousePayments } from '@/app/hooks/useHouses';
 
-// Define the Payment interface
+// Define the Payment interface with optional fields to match API response
 interface Payment {
   id: string;
   house_id: string;
@@ -24,8 +24,8 @@ interface Payment {
   payment_method: string | null;
   resident_name: string;
   fee_type_name: string;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 function formatRupiah(amount: number) {
