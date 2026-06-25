@@ -8,6 +8,58 @@ import Link from 'next/link';
 import { ArrowLeft, TrendingUp, TrendingDown } from 'lucide-react';
 import { useMonthlyDetail, usePaymentStatus } from '@/app/hooks/useReports';
 
+// Define interfaces
+interface FeeStatus {
+  fee_type_id: string;
+  fee_type_name: string;
+  status: 'paid' | 'partial' | 'unpaid';
+  paid_amount: number;
+}
+
+interface HouseStatus {
+  house_id: string;
+  house_number: string;
+  resident_name: string;
+  fee_statuses: FeeStatus[];
+  all_paid: boolean;
+}
+
+interface PaymentStatusData {
+  houses: HouseStatus[];
+}
+
+interface IncomeItem {
+  id: string;
+  house_number: string;
+  resident_name: string;
+  fee_type: string;
+  amount: number;
+  status: 'paid' | 'unpaid';
+  paid_at: string | null;
+}
+
+interface ExpenseItem {
+  id: string;
+  title: string;
+  category: string;
+  amount: number;
+  expense_date: string;
+}
+
+interface MonthlyDetailData {
+  income: {
+    total: number;
+    paid_count: number;
+    unpaid_count: number;
+    items: IncomeItem[];
+  };
+  expenses: {
+    total: number;
+    items: ExpenseItem[];
+  };
+  balance: number;
+}
+
 function formatRupiah(amount: number) {
   return new Intl.NumberFormat('id-ID', {
     style: 'currency', currency: 'IDR', minimumFractionDigits: 0,
@@ -84,7 +136,7 @@ export default function MonthlyDetailPage() {
                 <tr>
                   <th className="px-5 py-3 text-left font-medium text-gray-500">House</th>
                   <th className="px-5 py-3 text-left font-medium text-gray-500">Resident</th>
-                  {statusData.houses[0]?.fee_statuses.map(f => (
+                  {statusData.houses[0]?.fee_statuses.map((f: FeeStatus) => (
                     <th key={f.fee_type_id} className="px-5 py-3 text-left font-medium text-gray-500">
                       {f.fee_type_name}
                     </th>
@@ -93,7 +145,7 @@ export default function MonthlyDetailPage() {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {statusData.houses.map(house => (
+                {statusData.houses.map((house: HouseStatus) => (
                   <tr key={house.house_id} className="hover:bg-gray-50">
                     <td className="px-5 py-3 font-medium">
                       <Link href={`/houses/${house.house_id}`} className="text-blue-600 hover:underline">
@@ -101,7 +153,7 @@ export default function MonthlyDetailPage() {
                       </Link>
                     </td>
                     <td className="px-5 py-3 text-gray-600">{house.resident_name}</td>
-                    {house.fee_statuses.map(fee => (
+                    {house.fee_statuses.map((fee: FeeStatus) => (
                       <td key={fee.fee_type_id} className="px-5 py-3">
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                           fee.status === 'paid'
@@ -154,7 +206,7 @@ export default function MonthlyDetailPage() {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {detail.income.items.map((item: any) => (
+            {detail.income.items.map((item: IncomeItem) => (
               <tr key={item.id} className="hover:bg-gray-50">
                 <td className="px-5 py-3 font-medium text-neutral-700">{item.house_number}</td>
                 <td className="px-5 py-3 text-neutral-700">{item.resident_name}</td>
@@ -191,7 +243,7 @@ export default function MonthlyDetailPage() {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {detail.expenses.items.map((item: any) => (
+            {detail.expenses.items.map((item: ExpenseItem) => (
               <tr key={item.id} className="hover:bg-gray-50">
                 <td className="px-5 py-3 font-medium text-neutral-700">{item.title}</td>
                 <td className="px-5 py-3 capitalize text-neutral-700">{item.category}</td>
