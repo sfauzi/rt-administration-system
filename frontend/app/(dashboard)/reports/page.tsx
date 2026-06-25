@@ -30,12 +30,27 @@ function SummaryCard({
   );
 }
 
+// Define the chart data interface
+interface ChartData {
+  month: string;
+  month_label: string;
+  income: number;
+  expenses: number;
+  balance: number;
+}
+
 export default function ReportsPage() {
   const [year, setYear] = useState(new Date().getFullYear());
   const { data: summary, isLoading } = useMonthlySummary(year);
 
   const chartData = summary?.data ?? [];
   const currentMonth = format(new Date(), 'yyyy-MM');
+
+  // Custom formatter for tooltips
+  const tooltipFormatter = (value: number | undefined) => {
+    if (value === undefined) return ['', ''];
+    return [formatRupiah(value), ''];
+  };
 
   return (
     <div className="p-8 space-y-8">
@@ -94,7 +109,7 @@ export default function ReportsPage() {
                 tick={{ fontSize: 11 }}
               />
               <Tooltip
-                formatter={(v: number, name) => [formatRupiah(v), name]}
+                formatter={(value: number, name: string) => [formatRupiah(value), name]}
                 contentStyle={{ fontSize: 12 }}
               />
               <Legend />
@@ -117,7 +132,7 @@ export default function ReportsPage() {
               tick={{ fontSize: 11 }}
             />
             <Tooltip
-              formatter={(v: number) => [formatRupiah(v), 'Balance']}
+              formatter={(value: number, name: string) => [formatRupiah(value), name]}
               contentStyle={{ fontSize: 12 }}
             />
             <ReferenceLine y={0} stroke="#94a3b8" strokeDasharray="4 4" />
@@ -141,7 +156,7 @@ export default function ReportsPage() {
           <p className="text-sm text-gray-500">Click a month to see detailed income & expense report</p>
         </div>
         <div className="divide-y">
-          {chartData.map(row => (
+          {chartData.map((row: ChartData) => (
             <Link
               key={row.month}
               href={`/reports/${row.month}`}
