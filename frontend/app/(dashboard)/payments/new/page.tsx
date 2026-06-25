@@ -12,14 +12,14 @@ import { useHouses } from '@/app/hooks/useHouses';
 import { useFeeTypes } from '@/app/hooks/useFeetypes';
 import { useCreatePayment } from '@/app/hooks/usePayments';
 
-// Define interfaces
+// Define interfaces matching the global types
 interface House {
   id: string;
   house_number: string;
-  address: string;
-  house_type: string;
+  address?: string;
+  house_type?: string;
   occupancy_status: string;
-  current_resident: {
+  current_resident?: {  // Made optional with '?'
     id: string;
     full_name: string;
     resident_type: string;
