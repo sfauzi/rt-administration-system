@@ -19,27 +19,35 @@ export default function CreateHousePage() {
   };
 
   return (
-    <div className="p-8 max-w-2xl mx-auto space-y-6">
-      <div>
-        <Link
-          href="/houses"
-          className="inline-flex items-center gap-1.5 text-sm text-gray-500
-                     hover:text-gray-700 transition-colors mb-5"
-        >
-          <ArrowLeft size={15} />
-          Back to Houses
-        </Link>
-        <h1 className="text-2xl font-bold text-gray-900">Add House</h1>
-        <p className="text-gray-500 text-sm mt-1">
-          Register a new house unit to the complex
-        </p>
+    <div className="min-h-screen bg-slate-50 p-8">
+      <div className="max-w-2xl space-y-6">
+ 
+        {/* ── Header — identik dengan residents/new ──────────────────────── */}
+        <div>
+          <Link
+            href="/houses"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold
+                       text-blue-500 hover:text-blue-700 transition-colors mb-4"
+          >
+            <ArrowLeft size={13} />
+            Back to Houses
+          </Link>
+          <p className="text-xs font-semibold tracking-widest text-blue-500 uppercase mb-1">
+            RT Administration
+          </p>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Add House</h1>
+          <p className="text-sm text-gray-400 mt-0.5">
+            Register a new house unit to the complex
+          </p>
+        </div>
+ 
+        <HouseForm
+          onSubmit={handleSubmit}
+          isSubmitting={createHouse.isPending}
+          submitLabel="Add House"
+        />
+ 
       </div>
-
-      <HouseForm
-        onSubmit={handleSubmit}
-        isSubmitting={createHouse.isPending}
-        submitLabel="Add House"
-      />
     </div>
   );
 }

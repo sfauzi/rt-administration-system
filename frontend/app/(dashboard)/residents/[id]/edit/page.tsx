@@ -47,10 +47,13 @@ export default function EditResidentPage() {
   }
 
   return (
-    <div className="p-8 max-w-2xl mx-auto space-y-6">
-      {/* Header */}
-      <div>
-        <Link
+
+    <div className="min-h-screen bg-slate-50 p-8">
+      <div className="max-w-2xl space-y-6">
+
+        {/* ── Header ─────────────────────────────────────────────────────── */}
+        <div>
+          <Link
           href={`/residents/${id}`}
           className="inline-flex items-center gap-1.5 text-sm text-gray-500
                      hover:text-gray-700 transition-colors mb-5"
@@ -62,14 +65,17 @@ export default function EditResidentPage() {
         <p className="text-gray-500 text-sm mt-1">
           Update information for <strong>{resident.full_name}</strong>
         </p>
-      </div>
+        </div>
 
-      <ResidentForm
+        <ResidentForm
         initialData={resident}
         onSubmit={handleSubmit}
         isSubmitting={updateResident.isPending}
         submitLabel="Save Changes"
       />
+
+      </div>
     </div>
+    
   );
 }
