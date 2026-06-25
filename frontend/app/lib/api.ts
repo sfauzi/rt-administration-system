@@ -5,6 +5,7 @@ import type {
   MonthlySummaryReport, HouseResident, HousePaymentStatus,
   ApiCollection, ApiItem,
 } from '@/types';
+import { AuthUser, LoginResponse } from '../types';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000/api/v1',
@@ -14,6 +15,64 @@ const api = axios.create({
   },
   // withCredentials dihapus — tidak pakai Sanctum cookie di Next.js
 });
+
+// ── Token management ─────────────────────────────────────────────────────────
+
+const TOKEN_KEY = 'rt_admin_token';
+
+export const tokenStorage = {
+  get: (): string | null => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(TOKEN_KEY);
+  },
+  set: (token: string): void => {
+    localStorage.setItem(TOKEN_KEY, token);
+  },
+  remove: (): void => {
+    localStorage.removeItem(TOKEN_KEY);
+  },
+};
+
+// ── Interceptors ─────────────────────────────────────────────────────────────
+
+api.interceptors.request.use((config) => {
+  const token = tokenStorage.get();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// BUGFIX: flag untuk mencegah redirect loop saat /auth/me itu sendiri 401
+let isRedirecting = false;
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && !isRedirecting) {
+      isRedirecting = true;
+      tokenStorage.remove();
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+// ── Auth API ─────────────────────────────────────────────────────────────────
+
+export const authApi = {
+  login: (credentials: { email: string; password: string }) =>
+    api.post<LoginResponse>('/auth/login', credentials).then(r => r.data),
+
+  logout: () =>
+    api.post('/auth/logout').then(r => r.data),
+
+  // Dipakai oleh AuthProvider mount + callback page
+  me: () =>
+    api.get<{ user: AuthUser }>('/auth/me').then(r => r.data),
+};
 
 // Interceptor untuk debug — hapus setelah confirmed working
 api.interceptors.response.use(
