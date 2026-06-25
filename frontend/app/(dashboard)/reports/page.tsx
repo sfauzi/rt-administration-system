@@ -48,10 +48,10 @@ export default function ReportsPage() {
 
   // Custom formatter for tooltips that handles any value and name types
   const formatTooltipValue = (value: any, name: any) => {
-    if (value === undefined || value === null || typeof value === 'string') {
-      return ['-', name || ''];
-    }
-    return [formatRupiah(Number(value)), name || ''];
+    const num = Number(value);
+    return !isNaN(num) && value !== null && value !== ''
+      ? [formatRupiah(num), name || '']
+      : ['-', name || ''];
   };
 
   return (
@@ -165,9 +165,8 @@ export default function ReportsPage() {
               className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors"
             >
               <div className="flex items-center gap-4">
-                <span className={`text-sm font-semibold w-8 ${
-                  row.month === currentMonth ? 'text-blue-600' : 'text-gray-700'
-                }`}>
+                <span className={`text-sm font-semibold w-8 ${row.month === currentMonth ? 'text-blue-600' : 'text-gray-700'
+                  }`}>
                   {row.month_label}
                 </span>
                 {row.month === currentMonth && (
@@ -179,9 +178,8 @@ export default function ReportsPage() {
               <div className="flex items-center gap-8 text-sm">
                 <span className="text-green-600">+{formatRupiah(row.income)}</span>
                 <span className="text-red-500">-{formatRupiah(row.expenses)}</span>
-                <span className={`font-semibold w-28 text-right ${
-                  row.balance >= 0 ? 'text-blue-600' : 'text-red-600'
-                }`}>
+                <span className={`font-semibold w-28 text-right ${row.balance >= 0 ? 'text-blue-600' : 'text-red-600'
+                  }`}>
                   {formatRupiah(row.balance)}
                 </span>
                 <span className="text-gray-300 text-xs">→</span>
