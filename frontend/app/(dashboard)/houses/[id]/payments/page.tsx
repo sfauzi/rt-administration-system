@@ -10,6 +10,24 @@ import { ArrowLeft, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { useHouse, useHousePayments } from '@/app/hooks/useHouses';
 
+// Define the Payment interface
+interface Payment {
+  id: string;
+  house_id: string;
+  resident_id: string;
+  fee_type_id: string;
+  amount: number;
+  billing_month: string;
+  months_covered: number;
+  status: 'paid' | 'partial' | 'unpaid';
+  paid_at: string | null;
+  payment_method: string | null;
+  resident_name: string;
+  fee_type_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
 function formatRupiah(amount: number) {
   return new Intl.NumberFormat('id-ID', {
     style: 'currency', currency: 'IDR', minimumFractionDigits: 0,
@@ -27,8 +45,8 @@ export default function HousePaymentsPage() {
   const house = houseData?.data;
   const payments = paymentsData?.data ?? [];
   const totalPaid = payments
-    .filter(p => p.status === 'paid')
-    .reduce((s, p) => s + p.amount, 0);
+    .filter((p: Payment) => p.status === 'paid')
+    .reduce((sum: number, p: Payment) => sum + p.amount, 0);
 
   return (
     <div className="p-8 space-y-6">
@@ -97,7 +115,7 @@ export default function HousePaymentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {payments.map(payment => (
+              {payments.map((payment: Payment) => (
                 <tr key={payment.id} className="hover:bg-gray-50">
                   <td className="px-5 py-3 font-medium">{payment.billing_month}</td>
                   <td className="px-5 py-3">{payment.resident_name}</td>
