@@ -84,7 +84,13 @@ export default function DashboardPage() {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month_label" />
               <YAxis tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v: number) => formatRupiah(v)} />
+              <Tooltip
+              formatter={(v) =>
+                typeof v === 'number'
+                  ? formatRupiah(v)
+                  : '-'
+              }
+            />
               <Legend />
               <Bar dataKey="income" fill="#22c55e" name="Income" radius={[4, 4, 0, 0]} />
               <Bar dataKey="expenses" fill="#ef4444" name="Expenses" radius={[4, 4, 0, 0]} />
@@ -101,7 +107,13 @@ export default function DashboardPage() {
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="month_label" />
             <YAxis tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
-            <Tooltip formatter={(v: number) => formatRupiah(v)} />
+            <Tooltip
+              formatter={(v) =>
+                typeof v === 'number'
+                  ? formatRupiah(v)
+                  : '-'
+              }
+            />
             <Line
               type="monotone" dataKey="balance" stroke="#3b82f6"
               strokeWidth={2} dot={{ r: 4 }} name="Balance"
