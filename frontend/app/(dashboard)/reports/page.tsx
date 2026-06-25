@@ -46,10 +46,12 @@ export default function ReportsPage() {
   const chartData = summary?.data ?? [];
   const currentMonth = format(new Date(), 'yyyy-MM');
 
-  // Custom formatter for tooltips that handles undefined values
-  const formatTooltipValue = (value: number | undefined, name: string) => {
-    if (value === undefined) return ['-', name];
-    return [formatRupiah(value), name];
+  // Custom formatter for tooltips that handles any value type
+  const formatTooltipValue = (value: any, name: string) => {
+    if (value === undefined || value === null || typeof value === 'string') {
+      return ['-', name];
+    }
+    return [formatRupiah(Number(value)), name];
   };
 
   return (
@@ -109,10 +111,7 @@ export default function ReportsPage() {
                 tick={{ fontSize: 11 }}
               />
               <Tooltip
-                formatter={(value: number | undefined, name: string) => {
-                  if (value === undefined) return ['-', name];
-                  return [formatRupiah(value), name];
-                }}
+                formatter={formatTooltipValue}
                 contentStyle={{ fontSize: 12 }}
               />
               <Legend />
@@ -135,10 +134,7 @@ export default function ReportsPage() {
               tick={{ fontSize: 11 }}
             />
             <Tooltip
-              formatter={(value: number | undefined, name: string) => {
-                if (value === undefined) return ['-', name];
-                return [formatRupiah(value), name];
-              }}
+              formatter={formatTooltipValue}
               contentStyle={{ fontSize: 12 }}
             />
             <ReferenceLine y={0} stroke="#94a3b8" strokeDasharray="4 4" />
