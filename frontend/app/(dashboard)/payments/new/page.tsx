@@ -19,7 +19,7 @@ interface House {
   address?: string;
   house_type?: string;
   occupancy_status: string;
-  current_resident?: {  // Made optional with '?'
+  current_resident?: {
     id: string;
     full_name: string;
     resident_type: string;
@@ -33,6 +33,9 @@ interface FeeType {
   description: string | null;
   is_active: boolean;
 }
+
+// Define PaymentStatus type
+type PaymentStatus = 'paid' | 'unpaid' | 'partial';
 
 export default function NewPaymentPage() {
   const router = useRouter();
@@ -50,7 +53,7 @@ export default function NewPaymentPage() {
     amount: '',
     billing_month: format(new Date(), 'yyyy-MM'),
     months_covered: '1',
-    status: 'paid',
+    status: 'paid' as PaymentStatus,
     paid_at: format(new Date(), 'yyyy-MM-dd'),
     payment_method: 'cash',
     receipt_number: '',
@@ -92,6 +95,7 @@ export default function NewPaymentPage() {
       ...form,
       amount: Number(form.amount),
       months_covered: Number(form.months_covered),
+      status: form.status as PaymentStatus, // Ensure status is properly typed
     });
     router.push('/payments');
   };
@@ -193,7 +197,7 @@ export default function NewPaymentPage() {
             <label className="block text-sm font-medium mb-1 text-neutral-700">Payment Status</label>
             <select
               value={form.status}
-              onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
+              onChange={e => setForm(f => ({ ...f, status: e.target.value as PaymentStatus }))}
               className="w-full border rounded-lg px-3 py-2 text-sm text-neutral-500"
             >
               <option value="paid">Paid</option>
