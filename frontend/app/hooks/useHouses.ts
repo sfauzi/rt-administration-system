@@ -1,45 +1,73 @@
-// hooks/useHouses.ts
+// hooks/useHouses.ts — COMPLETE (tambah useDeleteHouse)
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { housesApi } from '../lib/api';
 import type { House } from '../types';
 
 export const HOUSE_KEYS = {
-  all: ['houses'] as const,
-  list: (params?: object) => [...HOUSE_KEYS.all, 'list', params] as const,
-  detail: (id: string) => [...HOUSE_KEYS.all, 'detail', id] as const,
-  residents: (id: string) => [...HOUSE_KEYS.all, id, 'residents'] as const,
-  payments: (id: string, params?: object) => [...HOUSE_KEYS.all, id, 'payments', params] as const,
+  all:       ['houses'] as const,
+  list:      (params?: object) => [...HOUSE_KEYS.all, 'list', params] as const,
+  detail:    (id: string)      => [...HOUSE_KEYS.all, 'detail', id] as const,
+  residents: (id: string)      => [...HOUSE_KEYS.all, id, 'residents'] as const,
+  payments:  (id: string, params?: object) => [...HOUSE_KEYS.all, id, 'payments', params] as const,
 };
 
 export function useHouses(params?: { occupancy_status?: string; house_type?: string }) {
   return useQuery({
     queryKey: HOUSE_KEYS.list(params),
-    queryFn: () => housesApi.list(params),
+    queryFn:  () => housesApi.list(params),
   });
 }
 
 export function useHouse(id: string) {
   return useQuery({
     queryKey: HOUSE_KEYS.detail(id),
-    queryFn: () => housesApi.get(id),
-    enabled: !!id,
+    queryFn:  () => housesApi.get(id),
+    enabled:  !!id,
   });
 }
 
 export function useHouseResidents(id: string) {
   return useQuery({
     queryKey: HOUSE_KEYS.residents(id),
-    queryFn: () => housesApi.residents(id),
-    enabled: !!id,
+    queryFn:  () => housesApi.residents(id),
+    enabled:  !!id,
   });
 }
 
 export function useHousePayments(id: string, params?: { month?: string }) {
   return useQuery({
     queryKey: HOUSE_KEYS.payments(id, params),
-    queryFn: () => housesApi.payments(id, params),
-    enabled: !!id,
+    queryFn:  () => housesApi.payments(id, params),
+    enabled:  !!id,
+  });
+}
+
+export function useCreateHouse() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<House>) => housesApi.create(data),
+    onSuccess:  () => qc.invalidateQueries({ queryKey: HOUSE_KEYS.all }),
+  });
+}
+
+export function useUpdateHouse(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Partial<House>) => housesApi.update(id, data),
+    onSuccess:  () => {
+      qc.invalidateQueries({ queryKey: HOUSE_KEYS.detail(id) });
+      qc.invalidateQueries({ queryKey: HOUSE_KEYS.list() });
+    },
+  });
+}
+
+// ── NEW ───────────────────────────────────────────────────────────────────────
+export function useDeleteHouse() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => housesApi.delete(id),
+    onSuccess:  () => qc.invalidateQueries({ queryKey: HOUSE_KEYS.all }),
   });
 }
 
@@ -60,31 +88,6 @@ export function useMoveOut(houseId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: { move_out_date: string }) => housesApi.moveOut(houseId, data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: HOUSE_KEYS.all });
-    },
-  });
-}
-
-
-
-export function useCreateHouse() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: Partial<House>) => housesApi.create(data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: HOUSE_KEYS.all });
-    },
-  });
-}
-
-export function useUpdateHouse(id: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: Partial<House>) => housesApi.update(id, data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: HOUSE_KEYS.detail(id) });
-      qc.invalidateQueries({ queryKey: HOUSE_KEYS.list() });
-    },
+    onSuccess:  () => qc.invalidateQueries({ queryKey: HOUSE_KEYS.all }),
   });
 }

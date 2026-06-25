@@ -1,114 +1,117 @@
+'use client';
+
 // app/(dashboard)/houses/page.tsx
 // Route: /houses
 
-'use client';
-
 import { useState } from 'react';
 import Link from 'next/link';
-import { Home, User, Plus } from 'lucide-react';
+import { Home, Plus } from 'lucide-react';
 import { useHouses } from '@/app/hooks/useHouses';
-
-// Define the House interface matching the global type exactly
-interface House {
-  id: string;
-  house_number: string;
-  address?: string;
-  house_type: 'permanent' | 'non_permanent' | 'temporary';
-  occupancy_status: 'occupied' | 'vacant';
-  current_resident?: {
-    id: string;
-    full_name?: string;
-    // Add other resident fields if needed
-  } | null;
-  created_at?: string;
-  updated_at?: string;
-}
+import { HouseCard } from '@/app/components/houses/HouseCard';
 
 export default function HousesPage() {
-  const [filter, setFilter] = useState<string>('');
+  const [filter, setFilter] = useState('');
   const { data, isLoading } = useHouses();
 
   const houses = data?.data ?? [];
+  const occupiedCount = houses.filter(h => h.occupancy_status === 'occupied').length;
+  const vacantCount  = houses.filter(h => h.occupancy_status === 'vacant').length;
+
   const filtered = filter
-    ? houses.filter((h: House) => h.occupancy_status === filter)
+    ? houses.filter(h => h.occupancy_status === filter)
     : houses;
+
+  const filters = [
+    { value: '',         label: 'All',      count: houses.length  },
+    { value: 'occupied', label: 'Occupied', count: occupiedCount  },
+    { value: 'vacant',   label: 'Vacant',   count: vacantCount    },
+  ];
 
   return (
     <div className="p-8 space-y-6">
+
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-black">Houses</h1>
-          <p className="text-gray-500">{houses.length} total houses</p>
+          <h1 className="text-2xl font-bold text-gray-900">Houses</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {houses.length} total ·{' '}
+            <span className="text-green-600 font-medium">{occupiedCount} occupied</span>
+            {' · '}
+            <span className="text-gray-400">{vacantCount} vacant</span>
+          </p>
         </div>
-        {/* Note: house creation is done via Filament admin panel */}
+        <Link
+          href="/houses/new"
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700
+                     text-white px-4 py-2 rounded-lg text-sm font-medium
+                     transition-colors shadow-sm"
+        >
+          <Plus size={16} />
+          Add House
+        </Link>
       </div>
 
-      {/* Filter Tabs */}
+      {/* Filter tabs */}
       <div className="flex gap-2">
-        {['', 'occupied', 'vacant'].map(status => (
+        {filters.map(({ value, label, count }) => (
           <button
-            key={status}
-            onClick={() => setFilter(status)}
+            key={value}
+            onClick={() => setFilter(value)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              filter === status
-                ? 'bg-blue-600 text-white'
-                : 'bg-white border text-gray-600 hover:bg-gray-50'
+              filter === value
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
             }`}
           >
-            {status === '' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
+            {label}
+            <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
+              filter === value ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
+            }`}>
+              {count}
+            </span>
           </button>
         ))}
       </div>
 
-      {/* Houses Grid */}
+      {/* Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 8 }).map((_, i) => (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {Array.from({ length: 10 }).map((_, i) => (
             <div key={i} className="bg-gray-100 rounded-xl h-36 animate-pulse" />
           ))}
         </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {filtered.map((house: House) => (
-            <Link key={house.id} href={`/houses/${house.id}`}>
-              <div className={`bg-white rounded-xl border p-5 hover:shadow-md transition-shadow cursor-pointer ${
-                house.occupancy_status === 'occupied'
-                  ? 'border-green-200'
-                  : 'border-gray-200'
-              }`}>
-                <div className="flex items-start justify-between mb-3">
-                  <div className={`p-2 rounded-lg ${
-                    house.occupancy_status === 'occupied' ? 'bg-green-100' : 'bg-gray-100'
-                  }`}>
-                    <Home size={18} className={
-                      house.occupancy_status === 'occupied' ? 'text-green-600' : 'text-gray-400'
-                    } />
-                  </div>
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                    house.house_type === 'permanent'
-                      ? 'bg-blue-100 text-blue-700'
-                      : house.house_type === 'temporary'
-                      ? 'bg-purple-100 text-purple-700'
-                      : 'bg-orange-100 text-orange-700'
-                  }`}>
-                    {house.house_type}
-                  </span>
-                </div>
-                <p className="font-bold text-lg text-black">{house.house_number}</p>
-                <p className="text-xs text-gray-500 truncate">{house.address}</p>
-                {house.current_resident && (
-                  <div className="flex items-center gap-1 mt-2">
-                    <User size={12} className="text-gray-400" />
-                    <p className="text-xs text-gray-600 truncate">
-                      {house.current_resident.full_name}
-                    </p>
-                  </div>
-                )}
-                {!house.current_resident && (
-                  <p className="text-xs text-gray-400 mt-2 italic">Vacant</p>
-                )}
-              </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-20 text-gray-400">
+          <Home size={40} className="mx-auto mb-3 opacity-20" />
+          <p className="font-medium text-gray-500">No houses found</p>
+          <p className="text-sm mt-1">
+            {filter
+              ? `No ${filter} houses at this time`
+              : 'Start by adding your first house'
+            }
+          </p>
+          {!filter && (
+            <Link
+              href="/houses/new"
+              className="mt-4 inline-flex items-center gap-1.5 text-sm
+                         text-blue-600 hover:underline font-medium"
+            >
+              <Plus size={14} /> Add the first house
             </Link>
+          )}
+        </div>
+      ) : (
+        /*
+         * key={filter} → memaksa React unmount+remount grid saat filter berubah,
+         * sekaligus memastikan hydration ulang saat navigasi balik ke halaman ini.
+         */
+        <div
+          key={filter}
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+        >
+          {filtered.map(house => (
+            <HouseCard key={house.id} house={house} />
           ))}
         </div>
       )}
