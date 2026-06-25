@@ -33,7 +33,8 @@ export default function ExpensesPage() {
   const deleteExpense = useDeleteExpense();
 
   const expenses = data?.data ?? [];
-  const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
+  // Fix: Explicitly type the parameters in reduce
+  const totalExpenses = expenses.reduce((sum: number, expense: any) => sum + expense.amount, 0);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this expense?')) return;
