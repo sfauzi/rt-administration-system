@@ -12,6 +12,28 @@ import { useHouses } from '@/app/hooks/useHouses';
 import { useFeeTypes } from '@/app/hooks/useFeetypes';
 import { useCreatePayment } from '@/app/hooks/usePayments';
 
+// Define interfaces
+interface House {
+  id: string;
+  house_number: string;
+  address: string;
+  house_type: string;
+  occupancy_status: string;
+  current_resident: {
+    id: string;
+    full_name: string;
+    resident_type: string;
+  } | null;
+}
+
+interface FeeType {
+  id: string;
+  name: string;
+  amount: number;
+  description: string | null;
+  is_active: boolean;
+}
+
 export default function NewPaymentPage() {
   const router = useRouter();
   const { data: housesData } = useHouses({ occupancy_status: 'occupied' });
@@ -35,11 +57,11 @@ export default function NewPaymentPage() {
     notes: '',
   });
 
-  const selectedHouse = houses.find(h => h.id === form.house_id);
-  const selectedFeeType = feeTypes.find(f => f.id === form.fee_type_id);
+  const selectedHouse = houses.find((h: House) => h.id === form.house_id);
+  const selectedFeeType = feeTypes.find((f: FeeType) => f.id === form.fee_type_id);
 
   const handleHouseChange = (houseId: string) => {
-    const house = houses.find(h => h.id === houseId);
+    const house = houses.find((h: House) => h.id === houseId);
     setForm(f => ({
       ...f,
       house_id: houseId,
@@ -48,7 +70,7 @@ export default function NewPaymentPage() {
   };
 
   const handleFeeTypeChange = (feeTypeId: string) => {
-    const feeType = feeTypes.find(f => f.id === feeTypeId);
+    const feeType = feeTypes.find((f: FeeType) => f.id === feeTypeId);
     setForm(f => ({
       ...f,
       fee_type_id: feeTypeId,
@@ -94,7 +116,7 @@ export default function NewPaymentPage() {
             required
           >
             <option value="">Select house...</option>
-            {houses.map(h => (
+            {houses.map((h: House) => (
               <option key={h.id} value={h.id}>
                 {h.house_number} — {h.current_resident?.full_name ?? 'Vacant'}
               </option>
@@ -120,7 +142,7 @@ export default function NewPaymentPage() {
             required
           >
             <option value="">Select fee type...</option>
-            {feeTypes.map(f => (
+            {feeTypes.map((f: FeeType) => (
               <option key={f.id} value={f.id}>
                 {f.name} — Rp {f.amount.toLocaleString('id-ID')}
               </option>
