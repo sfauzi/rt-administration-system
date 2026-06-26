@@ -20,11 +20,19 @@ export function usePayments(params?: {
   return useQuery({
     queryKey: PAYMENT_KEYS.list(params),
     queryFn: () => paymentsApi.list(params),
-    // ✅ Add staleTime to control caching behavior
-    staleTime: 1000, // 1 second - data becomes stale quickly
-    // ✅ Ensure we always get fresh data when refetching
+    staleTime: 1000,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
+    // Better error handling
+    retry: (failureCount, error: any) => {
+      // Don't retry on 400/404/409 errors
+      if (error?.response?.status === 400 || 
+          error?.response?.status === 404 || 
+          error?.response?.status === 409) {
+        return false;
+      }
+      return failureCount < 3;
+    },
   });
 }
 
@@ -34,6 +42,10 @@ export function usePayment(id: string) {
     queryFn: () => paymentsApi.get(id),
     enabled: !!id,
     staleTime: 1000,
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 404) return false;
+      return failureCount < 3;
+    },
   });
 }
 
@@ -42,12 +54,17 @@ export function useCreatePayment() {
   return useMutation({
     mutationFn: (data: Partial<Payment>) => paymentsApi.create(data),
     onSuccess: () => {
-      // ✅ Force refetch with exact query key
       qc.invalidateQueries({ 
         queryKey: PAYMENT_KEYS.all,
         refetchType: 'all',
       });
       qc.invalidateQueries({ queryKey: ['reports'] });
+    },
+    onError: (error: any) => {
+      // Log error for debugging
+      console.error('Create payment error:', error);
+      // The error will be passed to the component
+      throw error;
     },
   });
 }
@@ -57,7 +74,6 @@ export function useUpdatePayment(id: string) {
   return useMutation({
     mutationFn: (data: Partial<Payment>) => paymentsApi.update(id, data),
     onSuccess: () => {
-      // ✅ Force refetch with exact query keys
       qc.invalidateQueries({ 
         queryKey: PAYMENT_KEYS.detail(id),
         refetchType: 'all',
@@ -68,6 +84,10 @@ export function useUpdatePayment(id: string) {
       });
       qc.invalidateQueries({ queryKey: ['reports'] });
     },
+    onError: (error: any) => {
+      console.error('Update payment error:', error);
+      throw error;
+    },
   });
 }
 
@@ -76,12 +96,15 @@ export function useDeletePayment() {
   return useMutation({
     mutationFn: (id: string) => paymentsApi.delete(id),
     onSuccess: () => {
-      // ✅ Force refetch with exact query key
       qc.invalidateQueries({ 
         queryKey: PAYMENT_KEYS.all,
         refetchType: 'all',
       });
       qc.invalidateQueries({ queryKey: ['reports'] });
+    },
+    onError: (error: any) => {
+      console.error('Delete payment error:', error);
+      throw error;
     },
   });
 }
