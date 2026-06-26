@@ -10,6 +10,7 @@ import { ArrowLeft, Plus, TrendingUp, CheckCircle2, MinusCircle, Clock, X, Chevr
 import { format } from 'date-fns';
 import { useHouse, useHousePayments } from '@/app/hooks/useHouses';
 import { useQueryClient } from '@tanstack/react-query';
+import { PAYMENT_KEYS } from '@/app/hooks/usePayments';
 
 // ── Interface ─────────────────────────────────────────────────────────────────
 interface Payment {
@@ -217,24 +218,56 @@ export default function HousePaymentsPage() {
     refetch();
   }, [id, refetch]);
 
-  // ── Listen for payment updates and refetch ─────────────────────────────────
+  // ── Listen for payment updates using query invalidation ────────────────────
   useEffect(() => {
-    // Subscribe to query invalidation for payments
+    // Function to handle refetch when payments are invalidated
+    const handlePaymentUpdate = () => {
+      refetch();
+    };
+
+    // Subscribe to query cache changes
     const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
+      // Check if the event is related to query invalidation
       if (event.type === 'queryUpdated') {
-        const queryKey = event.query.queryKey;
-        // Check if any payment-related query was updated
-        if (Array.isArray(queryKey) && 
-            (queryKey.includes('payments') || 
-             queryKey[0] === 'payments' ||
-             queryKey.includes('house-payments'))) {
-          refetch();
+        const query = event.query;
+        const queryKey = query.queryKey;
+        
+        // Check if this is a payment-related query that was updated
+        if (Array.isArray(queryKey)) {
+          const isPaymentQuery = 
+            queryKey.some(key => key === 'payments' || key === 'house-payments') ||
+            queryKey[0] === 'payments' ||
+            queryKey.includes('payments');
+          
+          if (isPaymentQuery) {
+            handlePaymentUpdate();
+          }
+        }
+      }
+    });
+
+    // Also listen for query invalidation events specifically
+    const unsubscribeInvalidation = queryClient.getQueryCache().subscribe((event) => {
+      if (event.type === 'queryUpdated' && event.action?.type === 'invalidate') {
+        const query = event.query;
+        const queryKey = query.queryKey;
+        
+        if (Array.isArray(queryKey)) {
+          const isPaymentQuery = 
+            queryKey.some(key => key === 'payments' || key === 'house-payments') ||
+            queryKey[0] === 'payments' ||
+            queryKey.includes('payments');
+          
+          if (isPaymentQuery) {
+            handlePaymentUpdate();
+          }
         }
       }
     });
 
     return () => {
       unsubscribe();
+      unsubscribeInvalidation();
     };
   }, [queryClient, refetch]);
 
@@ -247,6 +280,20 @@ export default function HousePaymentsPage() {
     window.addEventListener('focus', handleFocus);
     return () => {
       window.removeEventListener('focus', handleFocus);
+    };
+  }, [refetch]);
+
+  // ── Polling for updates (optional, as a fallback) ──────────────────────────
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Only refetch if the page is visible
+      if (!document.hidden) {
+        refetch();
+      }
+    }, 1000); // Refetch every 30 seconds
+
+    return () => {
+      clearInterval(interval);
     };
   }, [refetch]);
 
