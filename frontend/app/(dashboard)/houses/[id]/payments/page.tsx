@@ -10,7 +10,6 @@ import { ArrowLeft, Plus, TrendingUp, CheckCircle2, MinusCircle, Clock, X, Chevr
 import { format } from 'date-fns';
 import { useHouse, useHousePayments } from '@/app/hooks/useHouses';
 import { useQueryClient } from '@tanstack/react-query';
-import { PAYMENT_KEYS } from '@/app/hooks/usePayments';
 
 // ── Interface ─────────────────────────────────────────────────────────────────
 interface Payment {
@@ -220,46 +219,33 @@ export default function HousePaymentsPage() {
 
   // ── Listen for payment updates using query invalidation ────────────────────
   useEffect(() => {
-    // Function to handle refetch when payments are invalidated
-    const handlePaymentUpdate = () => {
-      refetch();
-    };
+    // Track if we need to refetch
+    let shouldRefetch = false;
 
     // Subscribe to query cache changes
     const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
-      // Check if the event is related to query invalidation
-      if (event.type === 'queryUpdated') {
+      // Handle different event types
+      if (event.type === 'updated') {
         const query = event.query;
         const queryKey = query.queryKey;
         
         // Check if this is a payment-related query that was updated
         if (Array.isArray(queryKey)) {
           const isPaymentQuery = 
-            queryKey.some(key => key === 'payments' || key === 'house-payments') ||
-            queryKey[0] === 'payments' ||
-            queryKey.includes('payments');
+            queryKey.some(key => 
+              typeof key === 'string' && 
+              (key === 'payments' || key === 'house-payments' || key.includes('payment'))
+            ) ||
+            (typeof queryKey[0] === 'string' && 
+             (queryKey[0] === 'payments' || queryKey[0] === 'house-payments'));
           
-          if (isPaymentQuery) {
-            handlePaymentUpdate();
-          }
-        }
-      }
-    });
-
-    // Also listen for query invalidation events specifically
-    const unsubscribeInvalidation = queryClient.getQueryCache().subscribe((event) => {
-      if (event.type === 'queryUpdated' && event.action?.type === 'invalidate') {
-        const query = event.query;
-        const queryKey = query.queryKey;
-        
-        if (Array.isArray(queryKey)) {
-          const isPaymentQuery = 
-            queryKey.some(key => key === 'payments' || key === 'house-payments') ||
-            queryKey[0] === 'payments' ||
-            queryKey.includes('payments');
-          
-          if (isPaymentQuery) {
-            handlePaymentUpdate();
+          if (isPaymentQuery && !shouldRefetch) {
+            shouldRefetch = true;
+            // Use setTimeout to avoid multiple rapid refetches
+            setTimeout(() => {
+              refetch();
+              shouldRefetch = false;
+            }, 100);
           }
         }
       }
@@ -267,7 +253,6 @@ export default function HousePaymentsPage() {
 
     return () => {
       unsubscribe();
-      unsubscribeInvalidation();
     };
   }, [queryClient, refetch]);
 
@@ -290,7 +275,7 @@ export default function HousePaymentsPage() {
       if (!document.hidden) {
         refetch();
       }
-    }, 1000); // Refetch every 30 seconds
+    }, 30000); // Refetch every 30 seconds
 
     return () => {
       clearInterval(interval);
@@ -377,7 +362,7 @@ export default function HousePaymentsPage() {
           </button>
         )}
         {/* Manual refresh button */}
-        {/* <button
+        <button
           onClick={() => refetch()}
           className="inline-flex items-center gap-1.5 text-xs font-semibold
                      text-blue-600 hover:text-blue-700 transition-colors ml-auto"
@@ -387,7 +372,7 @@ export default function HousePaymentsPage() {
                   d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
           Refresh
-        </button> */}
+        </button>
       </div>
 
       {/* ── Payments Table ─────────────────────────────────────────────────── */}
