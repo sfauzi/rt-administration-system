@@ -3,11 +3,20 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, TrendingUp, CheckCircle2, Clock, MinusCircle } from 'lucide-react';
+import { 
+  Plus, 
+  TrendingUp, 
+  CheckCircle2, 
+  Clock, 
+  MinusCircle,
+  Pencil,
+  Trash2
+} from 'lucide-react';
 import { format } from 'date-fns';
-import { usePayments } from '@/app/hooks/usePayments';
+import { useQueryClient } from '@tanstack/react-query';
+import { usePayments, useDeletePayment } from '@/app/hooks/usePayments';
 
 // ── Interface ─────────────────────────────────────────────────────────────────
 interface Payment {
@@ -29,6 +38,9 @@ interface Payment {
   created_at?: string;
   updated_at?: string;
 }
+
+// ── Components ────────────────────────────────────────────────────────────────
+import { DeletePaymentModal } from '@/app/components/payments/DeletePaymentModal';
 
 function formatRupiah(amount: number) {
   return new Intl.NumberFormat('id-ID', {
@@ -72,16 +84,69 @@ const statuses = ['', 'paid', 'unpaid', 'partial'];
 export default function PaymentsPage() {
   const [month, setMonth] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  
+  const queryClient = useQueryClient();
 
-  const { data, isLoading } = usePayments({
-    month: month || undefined,
-    status: statusFilter || undefined,
-  });
+  // Gunakan params untuk query
+  const queryParams = {
+    ...(month && { month }),
+    ...(statusFilter && { status: statusFilter }),
+  };
 
-  const payments  = data?.data ?? [];
+  // ✅ FIX: Force refetch when the page mounts or becomes visible
+  const { data, isLoading, refetch } = usePayments(queryParams);
+  const deletePayment = useDeletePayment();
+
+  // ✅ FIX: Refetch data when the page becomes visible (user returns from another page)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refetch();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [refetch]);
+
+  // ✅ FIX: Refetch when the component mounts
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
+  // ✅ FIX: Refetch when filters change
+  useEffect(() => {
+    refetch();
+  }, [month, statusFilter, refetch]);
+
+  const payments = data?.data ?? [];
   const totalPaid = payments
     .filter((p: Payment) => p.status === 'paid')
     .reduce((sum: number, p: Payment) => sum + p.amount, 0);
+
+  const handleDeleteClick = (payment: Payment) => {
+    setSelectedPayment(payment);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (selectedPayment) {
+      try {
+        await deletePayment.mutateAsync(selectedPayment.id);
+        setDeleteModalOpen(false);
+        setSelectedPayment(null);
+        // ✅ FIX: Invalidate and refetch after successful deletion
+        await queryClient.invalidateQueries({ queryKey: ['payments'] });
+        await refetch();
+      } catch (error) {
+        console.error('Failed to delete payment:', error);
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 p-8 space-y-6">
@@ -96,6 +161,9 @@ export default function PaymentsPage() {
           <p className="text-sm text-gray-400 mt-0.5">
             Total collected:{' '}
             <span className="font-semibold text-blue-600">{formatRupiah(totalPaid)}</span>
+            {/* <span className="ml-2 text-xs text-gray-400">
+              ({payments.length} records)
+            </span> */}
           </p>
         </div>
         <Link
@@ -150,6 +218,15 @@ export default function PaymentsPage() {
               }`}
             >
               {status === '' ? 'All' : status}
+              {status !== '' && (
+                <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
+                  statusFilter === status
+                    ? 'bg-white/20 text-white'
+                    : 'bg-gray-100 text-gray-500'
+                }`}>
+                  {payments.filter(p => p.status === status).length}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -195,6 +272,7 @@ export default function PaymentsPage() {
                 <Th>Status</Th>
                 <Th>Method</Th>
                 <Th>Date</Th>
+                <Th className="text-center">Actions</Th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -258,6 +336,28 @@ export default function PaymentsPage() {
                       : '—'}
                   </td>
 
+                  {/* Actions */}
+                  <td className="px-5 py-4">
+                    <div className="flex items-center justify-center gap-1.5">
+                      <Link
+                        href={`/payments/${payment.id}/edit`}
+                        className="p-1.5 rounded-lg hover:bg-blue-50 text-gray-400
+                                   hover:text-blue-600 transition-colors"
+                        title="Edit payment"
+                      >
+                        <Pencil size={15} />
+                      </Link>
+                      <button
+                        onClick={() => handleDeleteClick(payment)}
+                        className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400
+                                   hover:text-red-600 transition-colors"
+                        title="Delete payment"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </td>
+
                 </tr>
               ))}
             </tbody>
@@ -270,13 +370,24 @@ export default function PaymentsPage() {
                 <td className="px-5 py-4 font-bold text-blue-600 text-base">
                   {formatRupiah(totalPaid)}
                 </td>
-                <td colSpan={4} />
+                <td colSpan={5} />
               </tr>
             </tfoot>
           </table>
         )}
       </div>
 
+      {/* Delete Modal */}
+      <DeletePaymentModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setSelectedPayment(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        payment={selectedPayment}
+        isPending={deletePayment.isPending}
+      />
     </div>
   );
 }
