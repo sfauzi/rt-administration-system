@@ -5,7 +5,8 @@
 
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, TrendingUp, TrendingDown, Wallet, CheckCircle2, Clock, MinusCircle } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { ArrowLeft, TrendingUp, TrendingDown, Wallet, CheckCircle2, Clock, MinusCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useMonthlyDetail, usePaymentStatus } from '@/app/hooks/useReports';
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
@@ -86,11 +87,161 @@ function FeeBadge({ fee }: { fee: FeeStatus }) {
   );
 }
 
+// ── Pagination Component ──────────────────────────────────────────────────────
+interface PaginationProps {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  perPage: number;
+  onPageChange: (page: number) => void;
+}
+
+function Pagination({ currentPage, totalPages, totalItems, perPage, onPageChange }: PaginationProps) {
+  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * perPage + 1;
+  const endItem   = Math.min(currentPage * perPage, totalItems);
+
+  // Build page number array with ellipsis logic
+  const pages = useMemo(() => {
+    if (totalPages <= 5) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    if (currentPage <= 3) {
+      return [1, 2, 3, 4, '...', totalPages];
+    }
+    if (currentPage >= totalPages - 2) {
+      return [1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    }
+    return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+  }, [currentPage, totalPages]);
+
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="flex items-center justify-between px-5 py-4
+                    border-t border-slate-100 bg-slate-50/60">
+      {/* Info */}
+      <p className="text-xs text-gray-400">
+        Showing{' '}
+        <span className="font-semibold text-gray-600">{startItem}–{endItem}</span>
+        {' '}of{' '}
+        <span className="font-semibold text-gray-600">{totalItems}</span>
+        {' '}records
+      </p>
+
+      {/* Controls */}
+      <div className="flex items-center gap-1">
+        {/* Prev */}
+        <button
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700
+                     hover:bg-white border border-transparent hover:border-slate-200
+                     transition-all disabled:opacity-30 disabled:cursor-not-allowed
+                     disabled:hover:bg-transparent disabled:hover:border-transparent"
+          aria-label="Previous page"
+        >
+          <ChevronLeft size={15} />
+        </button>
+
+        {/* Page numbers */}
+        {pages.map((page, idx) =>
+          page === '...' ? (
+            <span
+              key={`ellipsis-${idx}`}
+              className="px-2 py-1 text-xs text-gray-300 select-none"
+            >
+              ···
+            </span>
+          ) : (
+            <button
+              key={page}
+              onClick={() => onPageChange(page as number)}
+              className={`min-w-[30px] h-[30px] px-2 rounded-lg text-xs font-semibold
+                         transition-all ${
+                           currentPage === page
+                             ? 'bg-blue-600 text-white shadow-sm'
+                             : 'text-gray-500 hover:text-gray-800 hover:bg-white border border-transparent hover:border-slate-200'
+                         }`}
+              aria-label={`Page ${page}`}
+              aria-current={currentPage === page ? 'page' : undefined}
+            >
+              {page}
+            </button>
+          )
+        )}
+
+        {/* Next */}
+        <button
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700
+                     hover:bg-white border border-transparent hover:border-slate-200
+                     transition-all disabled:opacity-30 disabled:cursor-not-allowed
+                     disabled:hover:bg-transparent disabled:hover:border-transparent"
+          aria-label="Next page"
+        >
+          <ChevronRight size={15} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function MonthlyDetailPage() {
   const { month } = useParams<{ month: string }>();
   const { data: detail, isLoading } = useMonthlyDetail(month);
   const { data: statusData } = usePaymentStatus(month);
+
+  // Pagination states
+  const [housePage, setHousePage] = useState(1);
+  const [incomePage, setIncomePage] = useState(1);
+  const [expensePage, setExpensePage] = useState(1);
+  const PER_PAGE = 5;
+
+  // Reset pagination when month changes
+  useMemo(() => {
+    setHousePage(1);
+    setIncomePage(1);
+    setExpensePage(1);
+  }, [month]);
+
+  // Calculate paginated data
+  const paginatedHouses = useMemo(() => {
+    if (!statusData?.houses) return [];
+    const houses = statusData.houses;
+    return houses.slice((housePage - 1) * PER_PAGE, housePage * PER_PAGE);
+  }, [statusData?.houses, housePage]);
+
+  const paginatedIncome = useMemo(() => {
+    if (!detail?.income?.items) return [];
+    const items = detail.income.items;
+    return items.slice((incomePage - 1) * PER_PAGE, incomePage * PER_PAGE);
+  }, [detail?.income?.items, incomePage]);
+
+  const paginatedExpenses = useMemo(() => {
+    if (!detail?.expenses?.items) return [];
+    const items = detail.expenses.items;
+    return items.slice((expensePage - 1) * PER_PAGE, expensePage * PER_PAGE);
+  }, [detail?.expenses?.items, expensePage]);
+
+  // Calculate total pages
+  const houseTotalPages = Math.ceil((statusData?.houses?.length || 0) / PER_PAGE);
+  const incomeTotalPages = Math.ceil((detail?.income?.items?.length || 0) / PER_PAGE);
+  const expenseTotalPages = Math.ceil((detail?.expenses?.items?.length || 0) / PER_PAGE);
+
+  // Guard: if current page is out of range after data changes, go to last page
+  useMemo(() => {
+    if (houseTotalPages > 0 && housePage > houseTotalPages) {
+      setHousePage(houseTotalPages);
+    }
+    if (incomeTotalPages > 0 && incomePage > incomeTotalPages) {
+      setIncomePage(incomeTotalPages);
+    }
+    if (expenseTotalPages > 0 && expensePage > expenseTotalPages) {
+      setExpensePage(expenseTotalPages);
+    }
+  }, [houseTotalPages, incomeTotalPages, expenseTotalPages, housePage, incomePage, expensePage]);
 
   if (isLoading) {
     return (
@@ -238,7 +389,7 @@ export default function MonthlyDetailPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {statusData.houses.map((house: HouseStatus) => (
+                {paginatedHouses.map((house: HouseStatus) => (
                   <tr key={house.house_id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-5 py-3.5">
                       <Link
@@ -277,6 +428,14 @@ export default function MonthlyDetailPage() {
               </tbody>
             </table>
           </div>
+          {/* House Pagination */}
+          <Pagination
+            currentPage={housePage}
+            totalPages={houseTotalPages}
+            totalItems={statusData.houses?.length || 0}
+            perPage={PER_PAGE}
+            onPageChange={setHousePage}
+          />
         </div>
       )}
 
@@ -306,7 +465,7 @@ export default function MonthlyDetailPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {detail.income.items.map((item: IncomeItem) => (
+              {paginatedIncome.map((item: IncomeItem) => (
                 <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-5 py-3.5 font-bold text-gray-800">
                     {item.house_number}
@@ -337,8 +496,28 @@ export default function MonthlyDetailPage() {
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr className="border-t-2 border-slate-100 bg-slate-50/60">
+                <td colSpan={3} className="px-5 py-4 text-right text-xs font-semibold
+                                            uppercase tracking-wider text-gray-400">
+                  Total Income
+                </td>
+                <td className="px-5 py-4 font-bold text-blue-600 text-base">
+                  {formatRupiah(detail.income.total)}
+                </td>
+                <td colSpan={2} />
+              </tr>
+            </tfoot>
           </table>
         </div>
+        {/* Income Pagination */}
+        <Pagination
+          currentPage={incomePage}
+          totalPages={incomeTotalPages}
+          totalItems={detail.income.items?.length || 0}
+          perPage={PER_PAGE}
+          onPageChange={setIncomePage}
+        />
       </div>
 
       {/* ── Expense Details ────────────────────────────────────────────────── */}
@@ -365,7 +544,7 @@ export default function MonthlyDetailPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {detail.expenses.items.map((item: ExpenseItem) => (
+              {paginatedExpenses.map((item: ExpenseItem) => (
                 <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-5 py-3.5 font-semibold text-gray-800">{item.title}</td>
                   <td className="px-5 py-3.5">
@@ -397,6 +576,14 @@ export default function MonthlyDetailPage() {
             </tfoot>
           </table>
         </div>
+        {/* Expense Pagination */}
+        <Pagination
+          currentPage={expensePage}
+          totalPages={expenseTotalPages}
+          totalItems={detail.expenses.items?.length || 0}
+          perPage={PER_PAGE}
+          onPageChange={setExpensePage}
+        />
       </div>
 
     </div>

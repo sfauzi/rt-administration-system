@@ -20,6 +20,11 @@ export function usePayments(params?: {
   return useQuery({
     queryKey: PAYMENT_KEYS.list(params),
     queryFn: () => paymentsApi.list(params),
+    // ✅ Add staleTime to control caching behavior
+    staleTime: 1000, // 1 second - data becomes stale quickly
+    // ✅ Ensure we always get fresh data when refetching
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -28,6 +33,7 @@ export function usePayment(id: string) {
     queryKey: PAYMENT_KEYS.detail(id),
     queryFn: () => paymentsApi.get(id),
     enabled: !!id,
+    staleTime: 1000,
   });
 }
 
@@ -36,8 +42,11 @@ export function useCreatePayment() {
   return useMutation({
     mutationFn: (data: Partial<Payment>) => paymentsApi.create(data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: PAYMENT_KEYS.all });
-      // Also invalidate report queries since payment affects report data
+      // ✅ Force refetch with exact query key
+      qc.invalidateQueries({ 
+        queryKey: PAYMENT_KEYS.all,
+        refetchType: 'all',
+      });
       qc.invalidateQueries({ queryKey: ['reports'] });
     },
   });
@@ -48,8 +57,15 @@ export function useUpdatePayment(id: string) {
   return useMutation({
     mutationFn: (data: Partial<Payment>) => paymentsApi.update(id, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: PAYMENT_KEYS.detail(id) });
-      qc.invalidateQueries({ queryKey: PAYMENT_KEYS.list() });
+      // ✅ Force refetch with exact query keys
+      qc.invalidateQueries({ 
+        queryKey: PAYMENT_KEYS.detail(id),
+        refetchType: 'all',
+      });
+      qc.invalidateQueries({ 
+        queryKey: PAYMENT_KEYS.all,
+        refetchType: 'all',
+      });
       qc.invalidateQueries({ queryKey: ['reports'] });
     },
   });
@@ -60,7 +76,11 @@ export function useDeletePayment() {
   return useMutation({
     mutationFn: (id: string) => paymentsApi.delete(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: PAYMENT_KEYS.all });
+      // ✅ Force refetch with exact query key
+      qc.invalidateQueries({ 
+        queryKey: PAYMENT_KEYS.all,
+        refetchType: 'all',
+      });
       qc.invalidateQueries({ queryKey: ['reports'] });
     },
   });
