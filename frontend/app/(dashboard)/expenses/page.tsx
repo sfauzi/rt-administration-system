@@ -5,24 +5,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Plus, TrendingDown, Repeat2, Trash2 } from 'lucide-react';
+import { Plus, TrendingDown, Repeat2, Trash2, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { useExpenses, useDeleteExpense } from '@/app/hooks/useExpenses';
+import { DeleteExpenseModal } from '@/app/components/expenses/DeleteExpenseModal';
+import type { Expense } from '@/app/types';
 
-// ── Interface ─────────────────────────────────────────────────────────────────
-interface Expense {
-  id: string;
-  title: string;
-  category: string;
-  amount: number;
-  expense_date: string;
-  expense_month: string;
-  description: string | null;
-  is_recurring: boolean;
-  created_at?: string;
-  updated_at?: string;
-}
-
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function formatRupiah(amount: number) {
   return new Intl.NumberFormat('id-ID', {
     style: 'currency', currency: 'IDR', minimumFractionDigits: 0,
@@ -48,9 +37,12 @@ function Th({ children, right }: { children: React.ReactNode; right?: boolean })
   );
 }
 
+// ── Page ──────────────────────────────────────────────────────────────────────
 export default function ExpensesPage() {
-  const [month, setMonth] = useState(format(new Date(), 'yyyy-MM'));
+  const [month, setMonth]               = useState(format(new Date(), 'yyyy-MM'));
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
 
   const { data, isLoading } = useExpenses({
     month,
@@ -61,9 +53,27 @@ export default function ExpensesPage() {
   const expenses      = data?.data ?? [];
   const totalExpenses = expenses.reduce((sum: number, e: Expense) => sum + e.amount, 0);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this expense?')) return;
-    await deleteExpense.mutateAsync(id);
+  // ── Handlers ─────────────────────────────────────────────────────────────
+  const handleDeleteClick = (expense: Expense) => {
+    setSelectedExpense(expense);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedExpense) return;
+    try {
+      await deleteExpense.mutateAsync(selectedExpense.id);
+      setDeleteModalOpen(false);
+      setSelectedExpense(null);
+    } catch (error) {
+      console.error('Failed to delete expense:', error);
+    }
+  };
+
+  const handleDeleteClose = () => {
+    if (deleteExpense.isPending) return; // prevent close while deleting
+    setDeleteModalOpen(false);
+    setSelectedExpense(null);
   };
 
   return (
@@ -153,8 +163,7 @@ export default function ExpensesPage() {
             <p className="text-xs text-gray-400">
               {categoryFilter
                 ? `No "${categoryFilter}" expenses for ${month}`
-                : `No expenses found for ${month}`
-              }
+                : `No expenses found for ${month}`}
             </p>
             <Link
               href="/expenses/new"
@@ -223,16 +232,27 @@ export default function ExpensesPage() {
                   </td>
 
                   {/* Actions */}
-                  <td className="px-5 py-4 text-right">
-                    <button
-                      onClick={() => handleDelete(expense.id)}
-                      disabled={deleteExpense.isPending}
-                      className="inline-flex items-center gap-1 text-xs text-slate-400
-                                 hover:text-red-500 transition-colors disabled:opacity-40"
-                    >
-                      <Trash2 size={13} />
-                      Delete
-                    </button>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <Link
+                        href={`/expenses/${expense.id}/edit`}
+                        className="p-1.5 rounded-lg hover:bg-blue-50 text-gray-400
+                                   hover:text-blue-600 transition-colors"
+                        title="Edit expense"
+                      >
+                        <Pencil size={15} />
+                      </Link>
+                      <button
+                        onClick={() => handleDeleteClick(expense)}
+                        disabled={deleteExpense.isPending}
+                        className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400
+                                   hover:text-red-600 transition-colors
+                                   disabled:opacity-40 disabled:cursor-not-allowed"
+                        title="Delete expense"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
                   </td>
 
                 </tr>
@@ -253,6 +273,15 @@ export default function ExpensesPage() {
           </table>
         )}
       </div>
+
+      {/* ── Delete Modal ────────────────────────────────────────────────────── */}
+      <DeleteExpenseModal
+        isOpen={deleteModalOpen}
+        onClose={handleDeleteClose}
+        onConfirm={handleDeleteConfirm}
+        expenseTitle={selectedExpense?.title ?? null}
+        isPending={deleteExpense.isPending}
+      />
 
     </div>
   );
