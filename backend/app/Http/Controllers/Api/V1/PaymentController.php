@@ -7,6 +7,7 @@ use App\Http\Resources\PaymentResource;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Validation\ValidationException;
 
 class PaymentController extends Controller
 {
@@ -43,8 +44,9 @@ class PaymentController extends Controller
     }
 
     // POST /api/v1/payments
-    public function store(Request $request): PaymentResource
+    public function store(Request $request)
     {
+        // Validate using the request validator
         $validated = $request->validate([
             'house_id'       => 'required|uuid|exists:houses,id',
             'resident_id'    => 'required|uuid|exists:residents,id',
@@ -66,9 +68,11 @@ class PaymentController extends Controller
             ->exists();
 
         if ($exists) {
-            return response()->json([
-                'message' => 'Payment for this house, fee type, and billing month already exists.',
-            ], 422);
+            // Throw validation exception instead of returning JsonResponse
+            throw ValidationException::withMessages([
+                'billing_month' => 'Payment for this house, fee type, and billing month already exists.',
+                'fee_type_id' => 'This fee type has already been paid for the selected month.',
+            ]);
         }
 
         $payment = Payment::create($validated);
@@ -86,18 +90,42 @@ class PaymentController extends Controller
     }
 
     // PUT /api/v1/payments/{payment}
-    public function update(Request $request, Payment $payment): PaymentResource
+    public function update(Request $request, string $id)
     {
+        $payment = Payment::findOrFail($id);
+
         $validated = $request->validate([
-            'amount'         => 'integer|min:0',
-            'billing_month'  => 'string|regex:/^\d{4}-\d{2}$/',
+            'house_id'       => 'sometimes|uuid|exists:houses,id',
+            'resident_id'    => 'sometimes|uuid|exists:residents,id',
+            'fee_type_id'    => 'sometimes|uuid|exists:fee_types,id',
+            'amount'         => 'sometimes|integer|min:0',
+            'billing_month'  => 'sometimes|string|regex:/^\d{4}-\d{2}$/',
             'months_covered' => 'integer|min:1|max:12',
-            'status'         => 'in:paid,unpaid,partial',
+            'status'         => 'sometimes|in:paid,unpaid,partial',
             'paid_at'        => 'nullable|date',
             'payment_method' => 'nullable|string|in:cash,bank_transfer,qris',
             'receipt_number' => 'nullable|string|max:100',
             'notes'          => 'nullable|string',
         ]);
+
+        // Check for duplicate if house_id, fee_type_id, or billing_month changed
+        if (isset($validated['house_id']) || isset($validated['fee_type_id']) || isset($validated['billing_month'])) {
+            $houseId = $validated['house_id'] ?? $payment->house_id;
+            $feeTypeId = $validated['fee_type_id'] ?? $payment->fee_type_id;
+            $billingMonth = $validated['billing_month'] ?? $payment->billing_month;
+
+            $exists = Payment::where('house_id', $houseId)
+                ->where('fee_type_id', $feeTypeId)
+                ->where('billing_month', $billingMonth)
+                ->where('id', '!=', $id)
+                ->exists();
+
+            if ($exists) {
+                throw ValidationException::withMessages([
+                    'billing_month' => 'Another payment already exists for this house, fee type, and billing month.',
+                ]);
+            }
+        }
 
         $payment->update($validated);
         $payment->load(['house', 'resident', 'feeType']);

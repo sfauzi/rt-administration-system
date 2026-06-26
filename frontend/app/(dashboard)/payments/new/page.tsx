@@ -3,6 +3,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
@@ -12,14 +13,25 @@ import { PaymentForm, PaymentFormData } from '@/app/components/payments/PaymentF
 export default function NewPaymentPage() {
   const router = useRouter();
   const createPayment = useCreatePayment();
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (formData: PaymentFormData) => {
-    await createPayment.mutateAsync({
-      ...formData,
-      amount: Number(formData.amount),
-      months_covered: Number(formData.months_covered),
-    });
-    router.push('/payments');
+    try {
+      setError(null);
+      await createPayment.mutateAsync({
+        ...formData,
+        amount: Number(formData.amount),
+        months_covered: Number(formData.months_covered),
+      });
+      router.push('/payments');
+    } catch (err: any) {
+      // Handle the error
+      const errorMessage = err?.response?.data?.message || err?.message || 'Failed to create payment';
+      setError(errorMessage);
+      
+      // Re-throw to let the form know about the error
+      throw err;
+    }
   };
 
   return (
@@ -47,6 +59,7 @@ export default function NewPaymentPage() {
           onSubmit={handleSubmit}
           isPending={createPayment.isPending}
           submitLabel="Save Payment"
+          error={error}
         />
       </div>
     </div>

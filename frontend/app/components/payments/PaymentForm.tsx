@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { TrendingUp, User, Receipt, Save } from 'lucide-react';
+import { TrendingUp, User, Receipt, Save, AlertCircle } from 'lucide-react';
 import { useHouses } from '@/app/hooks/useHouses';
 import { useFeeTypes } from '@/app/hooks/useFeetypes';
 
@@ -51,12 +51,18 @@ interface PaymentFormProps {
   onSubmit: (data: PaymentFormData) => Promise<void>;
   isPending?: boolean;
   submitLabel?: string;
+  error?: string | null;
 }
 
 // ── Shared styles ─────────────────────────────────────────────────────────────
 const inputCls = `w-full border border-slate-200 bg-white rounded-xl px-4 py-2.5
   text-sm text-gray-700 placeholder-gray-300
   focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-400
+  transition-colors`;
+
+const inputErrorCls = `w-full border border-red-300 bg-red-50 rounded-xl px-4 py-2.5
+  text-sm text-red-700 placeholder-red-300
+  focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-red-400
   transition-colors`;
 
 const labelCls = 'block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5';
@@ -77,7 +83,8 @@ export function PaymentForm({
   initialData, 
   onSubmit, 
   isPending = false,
-  submitLabel = 'Save Payment'
+  submitLabel = 'Save Payment',
+  error = null
 }: PaymentFormProps) {
   const { data: housesData } = useHouses({ occupancy_status: 'occupied' });
   const { data: feeTypesData } = useFeeTypes();
@@ -100,6 +107,8 @@ export function PaymentForm({
     ...initialData,
   });
 
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
   const selectedHouse = houses.find((h: House) => h.id === form.house_id);
   const selectedFeeType = feeTypes.find((f: FeeType) => f.id === form.fee_type_id);
 
@@ -116,6 +125,8 @@ export function PaymentForm({
       house_id: houseId,
       resident_id: house?.current_resident?.id ?? '',
     }));
+    // Clear field errors when changing house
+    setFieldErrors({});
   };
 
   const handleFeeTypeChange = (feeTypeId: string) => {
@@ -125,6 +136,7 @@ export function PaymentForm({
       fee_type_id: feeTypeId,
       amount: String((feeType?.amount ?? 0) * Number(f.months_covered)),
     }));
+    setFieldErrors({});
   };
 
   const handleMonthsChange = (months: string) => {
@@ -133,12 +145,41 @@ export function PaymentForm({
       months_covered: months,
       amount: String((selectedFeeType?.amount ?? 0) * Number(months)),
     }));
+    setFieldErrors({});
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFieldErrors({});
     await onSubmit(form);
   };
+
+  // Parse error message to show user-friendly error
+  const getErrorMessage = (errorMsg: string | null): string => {
+    if (!errorMsg) return '';
+    
+    // Check for duplicate payment error
+    if (errorMsg.includes('already has a payment') || 
+        errorMsg.includes('duplicate') ||
+        errorMsg.includes('already exists')) {
+      return 'This resident has already made a payment for this fee type in the selected billing month. Please check the payment records or choose a different month/fee type.';
+    }
+    
+    // Check for validation errors
+    if (errorMsg.includes('validation')) {
+      return 'Please check all required fields and try again.';
+    }
+    
+    // Check for network errors
+    if (errorMsg.includes('network') || errorMsg.includes('connection')) {
+      return 'Network error. Please check your internet connection and try again.';
+    }
+    
+    // Return generic error
+    return errorMsg;
+  };
+
+  const displayError = getErrorMessage(error);
 
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
@@ -154,6 +195,25 @@ export function PaymentForm({
       </div>
 
       <div className="p-6 space-y-5">
+        {/* ── Global Error Display ──────────────────────────────────────── */}
+        {displayError && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+            <AlertCircle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-red-700">Error</p>
+              <p className="text-sm text-red-600">{displayError}</p>
+            </div>
+          </div>
+        )}
+
+        {/* ── Field-specific Error ──────────────────────────────────────── */}
+        {fieldErrors.general && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 flex items-start gap-3">
+            <AlertCircle size={16} className="text-yellow-500 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-yellow-700">{fieldErrors.general}</p>
+          </div>
+        )}
+
         {/* ── House & Resident ───────────────────────────────────────── */}
         <SectionLabel>House & Resident</SectionLabel>
 
@@ -165,7 +225,7 @@ export function PaymentForm({
           <select
             value={form.house_id}
             onChange={e => handleHouseChange(e.target.value)}
-            className={inputCls}
+            className={fieldErrors.house_id ? inputErrorCls : inputCls}
             required
           >
             <option value="">Select house...</option>
@@ -175,6 +235,9 @@ export function PaymentForm({
               </option>
             ))}
           </select>
+          {fieldErrors.house_id && (
+            <p className="text-xs text-red-500 mt-1">{fieldErrors.house_id}</p>
+          )}
         </div>
 
         {/* Resident info pill */}
@@ -205,7 +268,7 @@ export function PaymentForm({
           <select
             value={form.fee_type_id}
             onChange={e => handleFeeTypeChange(e.target.value)}
-            className={inputCls}
+            className={fieldErrors.fee_type_id ? inputErrorCls : inputCls}
             required
           >
             <option value="">Select fee type...</option>
@@ -215,6 +278,9 @@ export function PaymentForm({
               </option>
             ))}
           </select>
+          {fieldErrors.fee_type_id && (
+            <p className="text-xs text-red-500 mt-1">{fieldErrors.fee_type_id}</p>
+          )}
         </div>
 
         {/* Months Covered + Amount */}
@@ -240,9 +306,12 @@ export function PaymentForm({
               type="number"
               value={form.amount}
               onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
-              className={inputCls}
+              className={fieldErrors.amount ? inputErrorCls : inputCls}
               required
             />
+            {fieldErrors.amount && (
+              <p className="text-xs text-red-500 mt-1">{fieldErrors.amount}</p>
+            )}
           </div>
         </div>
 
@@ -259,9 +328,12 @@ export function PaymentForm({
               type="month"
               value={form.billing_month}
               onChange={e => setForm(f => ({ ...f, billing_month: e.target.value }))}
-              className={inputCls}
+              className={fieldErrors.billing_month ? inputErrorCls : inputCls}
               required
             />
+            {fieldErrors.billing_month && (
+              <p className="text-xs text-red-500 mt-1">{fieldErrors.billing_month}</p>
+            )}
           </div>
           <div>
             <label className={labelCls}>Payment Status</label>

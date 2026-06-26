@@ -3,6 +3,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
@@ -20,6 +21,7 @@ export default function EditPaymentPage({ params }: EditPaymentPageProps) {
   const router = useRouter();
   // Unwrap params Promise dengan React.use()
   const { id } = React.use(params);
+  const [error, setError] = useState<string | null>(null);
   
   const { data: paymentData, isLoading } = usePayment(id);
   const updatePayment = useUpdatePayment(id);
@@ -27,12 +29,22 @@ export default function EditPaymentPage({ params }: EditPaymentPageProps) {
   const payment = paymentData?.data;
 
   const handleSubmit = async (formData: PaymentFormData) => {
-    await updatePayment.mutateAsync({
-      ...formData,
-      amount: Number(formData.amount),
-      months_covered: Number(formData.months_covered),
-    });
-    router.push('/payments');
+    try {
+      setError(null);
+      await updatePayment.mutateAsync({
+        ...formData,
+        amount: Number(formData.amount),
+        months_covered: Number(formData.months_covered),
+      });
+      router.push('/payments');
+    } catch (err: any) {
+      // Handle the error
+      const errorMessage = err?.response?.data?.message || err?.message || 'Failed to update payment';
+      setError(errorMessage);
+      
+      // Re-throw to let the form know about the error
+      throw err;
+    }
   };
 
   if (isLoading) {
@@ -109,6 +121,7 @@ export default function EditPaymentPage({ params }: EditPaymentPageProps) {
           onSubmit={handleSubmit}
           isPending={updatePayment.isPending}
           submitLabel="Update Payment"
+          error={error}
         />
       </div>
     </div>
