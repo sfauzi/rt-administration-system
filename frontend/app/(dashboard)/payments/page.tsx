@@ -49,9 +49,9 @@ function formatRupiah(amount: number) {
 }
 
 // ── Shared table head cell ────────────────────────────────────────────────────
-function Th({ children }: { children: React.ReactNode }) {
+function Th({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
+    <th className={`px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 ${className ?? ''}`}>
       {children}
     </th>
   );
