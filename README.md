@@ -31,6 +31,24 @@ Sistem ini dibangun untuk membantu Ketua RT dalam mengelola administrasi perumah
 - **Manajemen Pengeluaran** — gaji satpam, token listrik, perbaikan, dan pengeluaran lainnya
 - **Laporan Keuangan** — grafik tahunan pemasukan vs pengeluaran, detail per bulan, dan status pembayaran per rumah
 
+### ERD Sistem
+<details>
+  <summary>ERD Sistem</summary>
+
+  <img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/751ce0f5-11c5-4955-b73c-afbf59d6a764" />
+
+  - **houses ↔ residents** — many-to-many melalui tabel pivot `house_residents`. Tabel pivot ini menyimpan histori lengkap siapa yang pernah tinggal di rumah mana, dengan kolom `is_current` dan `move_out_date` untuk menandai penghuni aktif vs riwayat.
+
+  - **houses → payments** — one-to-many. Satu rumah bisa punya banyak record pembayaran sepanjang waktu.
+
+  - **residents → payments** — one-to-many. Satu penghuni bisa punya banyak record pembayaran di berbagai rumah dan bulan.
+
+  - **fee_types → payments** — one-to-many. Setiap payment merujuk ke jenis iuran (satpam atau kebersihan). Ini memungkinkan fee types ditambah atau diubah nominalnya tanpa mengubah struktur tabel.
+
+  - **expenses** — berdiri sendiri, tidak ada foreign key ke tabel lain. Pengeluaran RT adalah data keuangan internal yang tidak berkaitan dengan penghuni atau rumah tertentu.
+
+</details>
+
 ---
 
 ## Demo
